@@ -573,11 +573,18 @@ function updateShake(dt){if(shDur>0){shDur-=dt;shX=(Math.random()-.5)*shStr*2;sh
 
 // damage numbers
 const DMG=[];
-function spawnDmg(x,y,val,col='#fff'){DMG.push({x,y,val:Math.round(val),col,life:1.1,vy:-55});}
-function updateDmg(dt){for(let i=DMG.length-1;i>=0;i--){const d=DMG[i];d.y+=d.vy*dt;d.vy*=.93;d.life-=dt;if(d.life<=0)DMG.splice(i,1);}}
+function spawnDmg(x,y,val,col='#fff'){DMG.push({x,y,val:Math.round(val),col,life:1.2,vy:-70});}
+function updateDmg(dt){for(let i=DMG.length-1;i>=0;i--){const d=DMG[i];d.y+=d.vy*dt;d.vy*=.91;d.life-=dt;if(d.life<=0)DMG.splice(i,1);}}
 function drawDmg(){
   ctx.save();ctx.translate(-game.cx,-game.cy);
-  for(const d of DMG){ctx.globalAlpha=clamp(d.life/1.1,0,1);ctx.fillStyle=d.col;ctx.font=`bold ${13+Math.round((1.1-d.life)*5)}px "Exo 2",Arial`;ctx.textAlign='center';ctx.fillText(d.val,d.x,d.y);}
+  for(const d of DMG){
+    const alpha=clamp(d.life/1.2,0,1);
+    const sz=16+Math.round((1.2-d.life)*8);
+    ctx.globalAlpha=alpha;
+    // shadow for readability
+    ctx.fillStyle='rgba(0,0,0,.55)';ctx.font=`bold ${sz+2}px "Exo 2",Arial`;ctx.textAlign='center';ctx.fillText(d.val,d.x+1,d.y+1);
+    ctx.fillStyle=d.col;ctx.font=`bold ${sz}px "Exo 2",Arial`;ctx.fillText(d.val,d.x,d.y);
+  }
   ctx.globalAlpha=1;ctx.restore();
 }
 
@@ -986,7 +993,7 @@ function processBullets(dt,now){
         if(f.shieldHp>0){const abs=Math.min(f.shieldHp,dmg);f.shieldHp-=abs;dmg-=abs;spawnDmg(f.x,f.y-f.r,'🛡','#00d4ff');if(dmg<=0){rm=true;break;}}
         f.hp-=dmg;f.recentFrom=b.ownerId;f.lastDamagedT=now;f.revealTimer=1.0;
         if(o)o.totalDmg+=dmg;
-        spawnDmg(f.x,f.y-f.r,dmg,f.isPlayer?'#ff4060':'#fff');
+        spawnDmg(f.x,f.y-f.r,dmg,f.isPlayer?'#ff4060':'#ffd76a');
         burst(b.x,b.y,b.color,7);playSound('hit');
         if(o)o.supCharge=clamp(o.supCharge+(o.scHit||18),0,o.supMax);
         if(b.explosive&&o)explode(b.x,b.y,b.expR,o);
@@ -1237,7 +1244,10 @@ function drawGrid(){
   for(let x=sx;x<game.cx+GC.width+sz;x+=sz){ctx.beginPath();ctx.moveTo(x-game.cx,0);ctx.lineTo(x-game.cx,GC.height);ctx.stroke();}
   for(let y=sy;y<game.cy+GC.height+sz;y+=sz){ctx.beginPath();ctx.moveTo(0,y-game.cy);ctx.lineTo(GC.width,y-game.cy);ctx.stroke();}
 }
-function drawHpBar(x,y,w,h,v,m,col){ctx.fillStyle='rgba(0,0,0,.4)';ctx.fillRect(x-w/2,y,w,h);ctx.fillStyle=col;ctx.fillRect(x-w/2,y,w*clamp(v/m,0,1),h);}
+function drawHpBar(x,y,w,h,v,m,col){
+  ctx.fillStyle='rgba(0,0,0,.4)';ctx.fillRect(x-w/2,y,w,h);
+  ctx.fillStyle=col;ctx.fillRect(x-w/2,y,w*clamp(v/m,0,1),h);
+}
 
 function drawBrawlerBody(ctx2, f, now){
   const c=cForSkin(f.skinId),s=sForSkin(f.skinId);
@@ -1362,6 +1372,8 @@ function drawBoxes(){
     ctx.strokeStyle='rgba(255,195,60,.2)';ctx.lineWidth=1.5;ctx.strokeRect(b.x,b.y,b.w,b.h);
     ctx.fillStyle='#ffd76a';ctx.font='bold 15px Arial';ctx.textAlign='center';ctx.fillText('+',b.x+22,b.y+27);
     drawHpBar(b.x+22,b.y-8,36,5,b.hp,b.maxHp,'#ffd76a');
+    ctx.fillStyle='rgba(255,215,106,.85)';ctx.font='bold 10px "Exo 2",Arial';ctx.textAlign='center';
+    ctx.fillText(`${Math.ceil(b.hp)}`,b.x+22,b.y-11);
   }
 }
 function drawHazards(){
@@ -1429,9 +1441,13 @@ function drawFighters(now){
     ctx.restore();ctx.globalAlpha=1;
     // hp bar
     drawHpBar(f.x,f.y-f.r-16,50,6,f.hp,f.maxHp,f.isPlayer?'#00e5a0':'#ff4060');
-    // name
+    // HP text above bar
+    ctx.fillStyle=f.isPlayer?'rgba(0,229,160,.9)':'rgba(255,100,100,.9)';
+    ctx.font='bold 10px "Exo 2",Arial';ctx.textAlign='center';
+    ctx.fillText(`${Math.ceil(f.hp)}/${f.maxHp}`,f.x,f.y-f.r-19);
+    // name above hp text
     ctx.fillStyle=f.isPlayer?'#a0e8ff':'#ffd0d0';ctx.font='bold 11px Rajdhani,Arial';ctx.textAlign='center';
-    ctx.fillText(`${f.name}${f.powerLevel>0?` ⚡${f.powerLevel}`:''}`,f.x,f.y-f.r-22);
+    ctx.fillText(`${f.name}${f.powerLevel>0?` ⚡${f.powerLevel}`:''}`,f.x,f.y-f.r-30);
     // trapped indicator
     if(f.trapped>0){ctx.fillStyle='#ff8060';ctx.font='14px Arial';ctx.textAlign='center';ctx.fillText('🔩',f.x,f.y-f.r-34);}
   }
