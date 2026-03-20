@@ -253,6 +253,7 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
           <button class="nbtn" id="openShopBtn">🛒 Tienda</button>
           <button class="nbtn" id="openRanksBtn" style="grid-column:1/-1">🏅 Rangos de Brawler</button>
           <button class="nbtn" id="openUpgradeBtn" style="grid-column:1/-1">⬆️ Mejoras de Brawler</button>
+          <button class="nbtn" id="openSettingsBtn" style="grid-column:1/-1">⚙️ <span data-t="settings">Configuración</span></button>
         </div>
         <div class="sbar">
           <div class="sbdg">Victorias<strong id="mWins">0</strong></div>
@@ -498,7 +499,7 @@ function defaultSave(){
     ownedSkins:['nova_classic'],selSkins:ss,claimedRoad:[],ownedGadgets:[],
     stats:{wins:0,matches:0,kills:0,damage:0},soundOn:true,
     brawlerTrophies:{nova:0},starrDrops:0,
-    brawlerLevels:{}};
+    brawlerLevels:{},lang:'es',volume:.7,keybinds:{}};
 }
 function loadSave(){
   try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave();
@@ -2414,6 +2415,267 @@ renderAll=function(){
 if(!save.brawlerLevels)save.brawlerLevels={};
 save.ownedBrawlers.forEach(b=>{if(!save.brawlerLevels[b])save.brawlerLevels[b]=1;});
 persist();
+</script>
+<!-- SETTINGS SCREEN -->
+<div id="settingsScreen" class="screen">
+  <div class="card" style="width:min(820px,97vw)">
+    <div class="stb">
+      <h2>⚙️ <span data-t="settings">Configuración</span></h2>
+      <button class="bs closeScreenBtn" data-close="settingsScreen">✕</button>
+    </div>
+
+    <!-- LANGUAGE -->
+    <div class="panel" style="margin-bottom:14px">
+      <div style="font-family:var(--font);font-weight:700;font-size:14px;margin-bottom:12px">🌍 <span data-t="language">Idioma / Language</span></div>
+      <div style="display:flex;gap:10px">
+        <button id="langEs" class="bp" style="flex:1;padding:12px" onclick="setLang('es')">🇪🇸 Español</button>
+        <button id="langEn" class="bs" style="flex:1;padding:12px" onclick="setLang('en')">🇬🇧 English</button>
+      </div>
+    </div>
+
+    <!-- VOLUME -->
+    <div class="panel" style="margin-bottom:14px">
+      <div style="font-family:var(--font);font-weight:700;font-size:14px;margin-bottom:12px">🔊 <span data-t="volume">Volumen</span></div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <span style="font-size:20px" id="volIcon">🔊</span>
+        <input type="range" id="volSlider" min="0" max="100" value="70"
+          style="flex:1;accent-color:var(--accent);height:6px;cursor:pointer">
+        <span id="volVal" style="font-family:var(--font);font-weight:700;min-width:38px;text-align:right">70%</span>
+        <button id="volMuteBtn" class="bs" style="padding:8px 14px;font-size:13px" data-t="mute">Silenciar</button>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="panel">
+      <div style="font-family:var(--font);font-weight:700;font-size:14px;margin-bottom:12px">🎮 <span data-t="controls">Controles</span></div>
+      <div class="g2" id="keybindGrid"></div>
+      <div style="margin-top:12px;display:flex;gap:10px">
+        <button class="bp" onclick="resetKeybinds()" style="font-size:12px;padding:9px 16px" data-t="resetControls">Restablecer por defecto</button>
+        <div class="sm" id="rebindHint" style="align-self:center;color:var(--accent2)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ SETTINGS SYSTEM ══
+
+// ── TRANSLATIONS ──
+const LANGS={
+  es:{
+    settings:'Configuración', language:'Idioma', volume:'Volumen', mute:'Silenciar',
+    unmute:'Activar', controls:'Controles', resetControls:'Restablecer por defecto',
+    pressKey:'Pulsa una tecla...', play:'JUGAR', brawlers:'Brawlers',
+    skins:'Skins', trophyRoad:'Ruta de Copas', shop:'Tienda',
+    ranks:'Rangos de Brawler', upgrades:'Mejoras de Brawler',
+    wins:'Victorias', matches:'Partidas', kills:'Kills', damage:'Daño',
+    pauseTitle:'PAUSA', resume:'Reanudar', leaveMatch:'Salir al menú',
+    victory:'¡VICTORIA!', position:'Posición', trophies:'Copas',
+    coins:'Monedas', newRewards:'Nuevas recompensas',
+    superReady:'¡Súper activado!', gadgetReady:'¡Listo!', gadgetNone:'No comprado',
+    moveHint:'mover', shootHint:'disparar', superHint:'súper',
+    gadgetHint:'gadget', pauseHint:'pausa',
+    actionUp:'Mover arriba', actionDown:'Mover abajo',
+    actionLeft:'Mover izquierda', actionRight:'Mover derecha',
+    actionSuper:'Súper', actionGadget:'Gadget',
+    keybindTitle:'Controles',
+  },
+  en:{
+    settings:'Settings', language:'Language', volume:'Volume', mute:'Mute',
+    unmute:'Unmute', controls:'Controls', resetControls:'Reset to default',
+    pressKey:'Press a key...', play:'PLAY', brawlers:'Brawlers',
+    skins:'Skins', trophyRoad:'Trophy Road', shop:'Shop',
+    ranks:'Brawler Ranks', upgrades:'Brawler Upgrades',
+    wins:'Wins', matches:'Matches', kills:'Kills', damage:'Damage',
+    pauseTitle:'PAUSED', resume:'Resume', leaveMatch:'Leave match',
+    victory:'VICTORY!', position:'Position', trophies:'Trophies',
+    coins:'Coins', newRewards:'New rewards',
+    superReady:'Super activated!', gadgetReady:'Ready!', gadgetNone:'Not bought',
+    moveHint:'move', shootHint:'shoot', superHint:'super',
+    gadgetHint:'gadget', pauseHint:'pause',
+    actionUp:'Move up', actionDown:'Move down',
+    actionLeft:'Move left', actionRight:'Move right',
+    actionSuper:'Super', actionGadget:'Gadget',
+    keybindTitle:'Controls',
+  }
+};
+let currentLang=save.lang||'es';
+function T(key){return(LANGS[currentLang]||LANGS.es)[key]||key;}
+function applyLang(){
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    const k=el.dataset.t;if(LANGS[currentLang][k])el.textContent=LANGS[currentLang][k];
+  });
+  // update dynamic elements
+  document.getElementById('langEs').className=currentLang==='es'?'bp':'bs';
+  document.getElementById('langEs').style.flex='1';document.getElementById('langEs').style.padding='12px';
+  document.getElementById('langEn').className=currentLang==='en'?'bp':'bs';
+  document.getElementById('langEn').style.flex='1';document.getElementById('langEn').style.padding='12px';
+  // play button
+  const pb=document.getElementById('playBtn');if(pb)pb.childNodes[pb.childNodes.length-1].textContent=' '+T('play');
+  // nav buttons
+  const navMap={openBrawlersBtn:'👾 '+T('brawlers'),openCustomBtn:'🎨 '+T('skins'),
+    openPassBtn:'🏆 '+T('trophyRoad'),openShopBtn:'🛒 '+T('shop'),
+    openRanksBtn:'🏅 '+T('ranks'),openUpgradeBtn:'⬆️ '+T('upgrades')};
+  Object.entries(navMap).forEach(([id,txt])=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
+  // stats bar labels
+  const statMap={mWins:T('wins'),mMatches:T('matches'),mKills:T('kills'),mDamage:T('damage')};
+  document.querySelectorAll('.sbdg').forEach(el=>{
+    const strong=el.querySelector('strong');const id=strong?.id;
+    if(id&&statMap[id])el.childNodes[0].textContent=statMap[id];
+  });
+  // controls hint
+  const ctip=document.querySelector('.ctip');
+  if(ctip)ctip.innerHTML=`<span class="key">WASD</span> ${T('moveHint')} · <span class="key">Click</span> ${T('shootHint')} · <span class="key">${getKeyLabel('super')}</span> ${T('superHint')} · <span class="key">${getKeyLabel('gadget')}</span> ${T('gadgetHint')} · <span class="key">Esc</span> ${T('pauseHint')}`;
+  // pause screen
+  const pt=document.querySelector('.pc h2');if(pt)pt.textContent='⏸ '+T('pauseTitle');
+  const rb=document.getElementById('resumeBtn');if(rb)rb.textContent='▶ '+T('resume');
+  const lb=document.getElementById('leaveBtn');if(lb)lb.textContent='🏠 '+T('leaveMatch');
+  renderKeybindGrid();
+}
+window.setLang=function(lang){currentLang=lang;save.lang=lang;persist();applyLang();};
+
+// ── VOLUME ──
+let masterGain=null,volumeLevel=save.volume!=null?save.volume:.7;
+function getMasterGain(){
+  const c=gACtx();
+  if(!masterGain){masterGain=c.createGain();masterGain.connect(c.destination);masterGain.gain.value=volumeLevel;}
+  return masterGain;
+}
+// patch audio to route through masterGain
+const _origGACtx=gACtx;
+// override playSound to use gain node
+const _origPlaySound=playSound;
+playSound=function(type){
+  if(!soundOn)return;
+  try{
+    const c=gACtx(),mg=getMasterGain();
+    const o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(mg);const t=c.currentTime;
+    const map={shoot:['square',200,100,.06,.08],hit:['sawtooth',350,150,.12,.1],
+      exp:['sawtooth',120,40,.22,.28],death:['sine',440,55,.18,.5],
+      super:['sine',330,990,.15,.4],pickup:['sine',550,880,.1,.14],
+      dash:['triangle',440,880,.08,.12],win:null,zone:['sawtooth',60,40,.18,.3],
+      streak:null,gad:['sine',660,1320,.12,.18],tp:['sine',800,1600,.1,.2]};
+    const s=map[type];
+    if(!s){
+      if(type==='win'){[0,.15,.3,.5].forEach((d,i)=>{const o2=c.createOscillator(),g2=c.createGain();o2.connect(g2);g2.connect(mg);o2.type='sine';o2.frequency.value=[440,554,659,880][i];g2.gain.setValueAtTime(.15,t+d);g2.gain.linearRampToValueAtTime(.001,t+d+.3);o2.start(t+d);o2.stop(t+d+.3);});}
+      else if(type==='streak'){[0,.08,.16].forEach((d,i)=>{const o2=c.createOscillator(),g2=c.createGain();o2.connect(g2);g2.connect(mg);o2.type='square';o2.frequency.value=[330,440,660][i];g2.gain.setValueAtTime(.1,t+d);g2.gain.linearRampToValueAtTime(.001,t+d+.12);o2.start(t+d);o2.stop(t+d+.12);});}
+      return;
+    }
+    o.type=s[0];o.frequency.setValueAtTime(s[1],t);o.frequency.linearRampToValueAtTime(s[2],t+s[4]);
+    g.gain.setValueAtTime(s[3],t);g.gain.linearRampToValueAtTime(.001,t+s[4]);
+    o.start(t);o.stop(t+s[4]+.02);
+  }catch(e){}
+};
+function setVolume(v){
+  volumeLevel=v/100;save.volume=volumeLevel;persist();
+  if(masterGain)masterGain.gain.value=volumeLevel;
+  soundOn=v>0;save.soundOn=soundOn;
+  document.getElementById('volVal').textContent=v+'%';
+  document.getElementById('volIcon').textContent=v===0?'🔇':v<40?'🔉':'🔊';
+  document.getElementById('volMuteBtn').textContent=v===0?T('unmute'):T('mute');
+  document.getElementById('sndBtn').textContent=soundOn?'🔊':'🔇';
+}
+document.getElementById('volSlider').addEventListener('input',e=>setVolume(Number(e.target.value)));
+document.getElementById('volMuteBtn').addEventListener('click',()=>{
+  const cur=Number(document.getElementById('volSlider').value);
+  if(cur>0){document.getElementById('volSlider').dataset.prev=cur;document.getElementById('volSlider').value=0;setVolume(0);}
+  else{const prev=Number(document.getElementById('volSlider').dataset.prev)||70;document.getElementById('volSlider').value=prev;setVolume(prev);}
+});
+// init slider from save
+document.getElementById('volSlider').value=Math.round(volumeLevel*100);
+setVolume(Math.round(volumeLevel*100));
+
+// ── KEYBINDS ──
+const DEFAULT_KEYS={up:'w',down:'s',left:'a',right:'d',super:'e',gadget:'g'};
+let keybinds={...DEFAULT_KEYS,...(save.keybinds||{})};
+let rebinding=null;
+function getKeyLabel(action){return keybinds[action]||DEFAULT_KEYS[action];}
+function saveKeybinds(){save.keybinds={...keybinds};persist();}
+function resetKeybinds(){keybinds={...DEFAULT_KEYS};saveKeybinds();renderKeybindGrid();applyKeybinds();document.getElementById('rebindHint').textContent='';}
+function applyKeybinds(){
+  // patch the keydown handler to use current keybinds
+  // done dynamically in the existing listener below
+}
+function renderKeybindGrid(){
+  const actions=[
+    {id:'up',   label:T('actionUp')},
+    {id:'down', label:T('actionDown')},
+    {id:'left', label:T('actionLeft')},
+    {id:'right',label:T('actionRight')},
+    {id:'super',label:T('actionSuper')},
+    {id:'gadget',label:T('actionGadget')},
+  ];
+  document.getElementById('keybindGrid').innerHTML=actions.map(a=>`
+    <div class="ic" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px">
+      <span style="font-size:13px;font-weight:600">${a.label}</span>
+      <button id="kb_${a.id}" class="${rebinding===a.id?'borange':'bs'}" style="min-width:80px;padding:8px 14px;font-size:13px;font-family:var(--font);font-weight:900"
+        onclick="startRebind('${a.id}')">
+        ${rebinding===a.id?T('pressKey'):keybinds[a.id].toUpperCase()}
+      </button>
+    </div>`).join('');
+}
+window.startRebind=function(action){
+  rebinding=action;
+  document.getElementById('rebindHint').textContent=T('pressKey')+' ('+action+')';
+  renderKeybindGrid();
+};
+// Listen for rebind keypress
+window.addEventListener('keydown',e=>{
+  if(!rebinding)return;
+  if(e.key==='Escape'){rebinding=null;document.getElementById('rebindHint').textContent='';renderKeybindGrid();return;}
+  const k=e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright'].includes(k)||k.length===1){
+    keybinds[rebinding]=k;saveKeybinds();rebinding=null;
+    document.getElementById('rebindHint').textContent='✓ Guardado';
+    setTimeout(()=>{if(document.getElementById('rebindHint'))document.getElementById('rebindHint').textContent='';},1200);
+    renderKeybindGrid();applyLang();
+  }
+  e.preventDefault();e.stopPropagation();
+},{capture:true});
+
+// Patch the game input handler to respect keybinds
+// Override existing handler by replacing direction checks
+const _gameKeyDown=Array.from({length:1}).map(()=>{
+  // We inject into the existing keydown by reading keybinds at check time
+  // The original handler uses hardcoded 'w','s','a','d' — we replace it:
+  window.removeEventListener('keydown',window._mainKeyDown);
+  const handler=e=>{
+    const k=e.key.toLowerCase();
+    if(k===keybinds.up||k==='arrowup')IN.up=true;
+    if(k===keybinds.down||k==='arrowdown')IN.down=true;
+    if(k===keybinds.left||k==='arrowleft')IN.left=true;
+    if(k===keybinds.right||k==='arrowright')IN.right=true;
+    if(k===keybinds.super&&game.state==='playing')useSuper();
+    if(k===keybinds.gadget&&game.state==='playing')activateGadget();
+    if(e.key==='Escape'){if(game.state==='playing')pauseGame();else if(game.state==='paused')resumeGame();}
+  };
+  window.addEventListener('keydown',handler);
+  const upHandler=e=>{
+    const k=e.key.toLowerCase();
+    if(k===keybinds.up||k==='arrowup')IN.up=false;
+    if(k===keybinds.down||k==='arrowdown')IN.down=false;
+    if(k===keybinds.left||k==='arrowleft')IN.left=false;
+    if(k===keybinds.right||k==='arrowright')IN.right=false;
+  };
+  window.addEventListener('keyup',upHandler);
+  return handler;
+})[0];
+
+// ── OPEN SETTINGS ──
+document.getElementById('openSettingsBtn').addEventListener('click',()=>{
+  renderKeybindGrid();
+  document.getElementById('langEs').className=currentLang==='es'?'bp':'bs';
+  document.getElementById('langEs').style.cssText='flex:1;padding:12px';
+  document.getElementById('langEn').className=currentLang==='en'?'bp':'bs';
+  document.getElementById('langEn').style.cssText='flex:1;padding:12px';
+  openScreen('settingsScreen');
+});
+
+// ── INIT ──
+if(save.lang)currentLang=save.lang;
+applyLang();
+
 </script>
 </body>
 </html>
