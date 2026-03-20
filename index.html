@@ -804,7 +804,7 @@ function spawnFirewall(f){
 
 // ═══════════════ COMBAT ═══════════════
 function pushBullet(owner,angle,dmgMul=1,opts={}){
-  owner.lastAttackT=performance.now()/1000;owner.revealTimer=1.4;
+  owner.lastAttackT=performance.now()/1000;owner.revealTimer=1.0;
   let dmg=(opts.damage||owner.damage)*dmgMul;
   let spd=opts.speed||owner.bSpeed;
   if(owner.overcharge>0){dmg*=2;spd*=1.5;}
@@ -984,7 +984,7 @@ function processBullets(dt,now){
         if(o&&!o.isPlayer&&!f.isPlayer)dmg*=.58;
         // shield
         if(f.shieldHp>0){const abs=Math.min(f.shieldHp,dmg);f.shieldHp-=abs;dmg-=abs;spawnDmg(f.x,f.y-f.r,'🛡','#00d4ff');if(dmg<=0){rm=true;break;}}
-        f.hp-=dmg;f.recentFrom=b.ownerId;f.lastDamagedT=now;f.revealTimer=1.4;
+        f.hp-=dmg;f.recentFrom=b.ownerId;f.lastDamagedT=now;f.revealTimer=1.0;
         if(o)o.totalDmg+=dmg;
         spawnDmg(f.x,f.y-f.r,dmg,f.isPlayer?'#ff4060':'#fff');
         burst(b.x,b.y,b.color,7);playSound('hit');
