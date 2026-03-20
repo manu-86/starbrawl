@@ -576,16 +576,14 @@ const DMG=[];
 function spawnDmg(x,y,val,col='#fff'){DMG.push({x,y,val:Math.round(val),col,life:1.2,vy:-70});}
 function updateDmg(dt){for(let i=DMG.length-1;i>=0;i--){const d=DMG[i];d.y+=d.vy*dt;d.vy*=.91;d.life-=dt;if(d.life<=0)DMG.splice(i,1);}}
 function drawDmg(){
-  ctx.save();ctx.translate(-game.cx,-game.cy);
   for(const d of DMG){
     const alpha=clamp(d.life/1.2,0,1);
     const sz=16+Math.round((1.2-d.life)*8);
     ctx.globalAlpha=alpha;
-    // shadow for readability
     ctx.fillStyle='rgba(0,0,0,.55)';ctx.font=`bold ${sz+2}px "Exo 2",Arial`;ctx.textAlign='center';ctx.fillText(d.val,d.x+1,d.y+1);
     ctx.fillStyle=d.col;ctx.font=`bold ${sz}px "Exo 2",Arial`;ctx.fillText(d.val,d.x,d.y);
   }
-  ctx.globalAlpha=1;ctx.restore();
+  ctx.globalAlpha=1;
 }
 
 // ═══════════════ GAME STATE ═══════════════
