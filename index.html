@@ -390,13 +390,44 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
 
 <script>
 'use strict';
-// Stubs — overridden by settings block later
-let currentLang='es';
-function T(key){
-  if(window._LANGS&&window._LANGS[currentLang])return window._LANGS[currentLang][key]||key;
-  return key;
+// Spanish-only translations
+const currentLang='es';
+const _T={
+  unlock:'Seleccionar',active:'✓ Activo',locked:'🔒 Bloqueado',
+  starrExclusive:'⭐ Starr Drop exclusivo',totalCups:'copas totales',
+  buyGadget:'🛒',gadgetOwned:'✓ Gadget',
+  bought:'✓ Comprada',needsBrawler:'Requiere brawler',available:'Disponible',
+  buy:'Comprar',equip:'Equipar',equipped:'✓ Equipada',notOwned:'🔒 Bloqueada',
+  upgradeBtn:'⬆️ Mejorar',levelMax:'✓ NIVEL MAX',
+  nextRank:'→',maxRank:'🏆 Máximo',
+  claimBtn:'Reclamar',claimedBtn:'✓',roadLocked:'🔒',
+  openDrop:'Abrir',dropWin:'¡Nuevo Brawler',dropSkin:'Skin desbloqueada',dropCoins:'Monedas añadidas',
+  trophies:'Copas',coins:'Monedas',damage:'Daño',newRewards:'Recompensas',
+  victory:'¡VICTORIA!',positionText:'Posición',playAgain:'⚔️ Jugar de nuevo',menu:'🏠 Menú',
+  gadgetReady:'¡Listo!',gadgetNone:'No comprado',
+  starrDrops:'Starr Drops',shop:'Tienda',trophyRoad:'Ruta de Copas',
+  bronzeI:'Bronce I',bronzeII:'Bronce II',bronzeIII:'Bronce III',
+  silverI:'Plata I',silverII:'Plata II',silverIII:'Plata III',
+  goldI:'Oro I',goldII:'Oro II',goldIII:'Oro III',
+  diamondI:'Diamante I',diamondII:'Diamante II',diamondIII:'Diamante III',
+  mythicI:'Mítico I',mythicII:'Mítico II',mythicIII:'Mítico III',
+  legendI:'Legendario I',legendII:'Legendario II',legendIII:'Legendario III',
+  masters:'Maestros',grandMaster:'Gran Maestro',demigod:'Semidiós',god:'Dios',
+  roleHybrid:'Híbrido',roleTank:'Tanque',roleAssassin:'Asesino',
+  roleControl:'Control',roleSniper:'Tirador',roleCosmic:'Cósmico',
+  roleMythic:'Fantasma',roleMech:'Mech',roleSwordsman:'Espadachín',
+  roleReaper:'Segador',roleArcanist:'Hechicero',roleElectrician:'Electricista',
+  roleShadow:'Sombrío',rolePyro:'Piromante',gadgetInfo:'CD:',
+};
+function T(key){return _T[key]||key;}
+function tRole(role){
+  const map={'Híbrido':'roleHybrid','Tanque':'roleTank','Asesino':'roleAssassin',
+    'Control':'roleControl','Tirador':'roleSniper','Cósmico':'roleCosmic',
+    'Fantasma':'roleMythic','Mech':'roleMech','Espadachín':'roleSwordsman',
+    'Segador':'roleReaper','Hechicero':'roleArcanist','Electricista':'roleElectrician',
+    'Sombrío':'roleShadow','Piromante':'rolePyro','Francotirador':'roleSniper','Asalto':'roleControl'};
+  return T(map[role]||'roleHybrid')||role;
 }
-function tRole(role){return role;}
 let keybinds={up:'w',down:'s',left:'a',right:'d',super:'e',gadget:'g'};
 function getKeyLabel(action){return keybinds[action]||action;}
 // ═══════════════ CONSTANTS ═══════════════
@@ -778,14 +809,23 @@ function getDifficultyTier(totalTrophies){
 // ═══════════════ ENTITY CREATION ═══════════════
 const BNAMES=['Bolt','Rex','Mira','Kira','Flux','Ares','Niko','Faye','Drift','Zeta','Orion','Blaze','Echo','Nova_X','Crypt','Hex'];
 function spawnPos(ax,ay){
-  for(let t=0;t<140;t++){
-    const x=rand(100,game.world.w-100),y=rand(100,game.world.h-100);
-    if(ax!=null&&dist(x,y,ax,ay)<380)continue;
+  // Each new fighter must be far from ALL existing fighters, not just the player
+  for(let t=0;t<200;t++){
+    const x=rand(120,game.world.w-120),y=rand(120,game.world.h-120);
+    if(ax!=null&&dist(x,y,ax,ay)<500)continue; // far from player
     if(game.walls.some(w=>circleRect(x,y,28,w)))continue;
-    if(game.fighters.some(f=>!f.dead&&dist(x,y,f.x,f.y)<100))continue;
+    if(game.fighters.some(f=>!f.dead&&dist(x,y,f.x,f.y)<320))continue; // far from ALL fighters
+    if(game.bushes.some(b=>circleRect(x,y,20,b)))continue; // don't spawn inside bushes
     return{x,y};
   }
-  return{x:rand(100,game.world.w-100),y:rand(100,game.world.h-100)};
+  // fallback with relaxed constraints
+  for(let t=0;t<100;t++){
+    const x=rand(120,game.world.w-120),y=rand(120,game.world.h-120);
+    if(game.walls.some(w=>circleRect(x,y,28,w)))continue;
+    if(game.fighters.some(f=>!f.dead&&dist(x,y,f.x,f.y)<180))continue;
+    return{x,y};
+  }
+  return{x:rand(120,game.world.w-120),y:rand(120,game.world.h-120)};
 }
 function createFighter(id,isPlayer,bid,x,y,diff){
   const d=BD[bid],sk=skinForB(bid);
@@ -1233,8 +1273,18 @@ function updateAI(bot,dt,now){
   if(g.active&&dist(bot.x,bot.y,g.cx,g.cy)>g.radius-80){
     const a=Math.atan2(g.cy-bot.y,g.cx-bot.x);moveCircle(bot,Math.cos(a)*bot.speed*dt,Math.sin(a)*bot.speed*dt);applyRegen(bot,dt,now);return;
   }
-  // heal seek
-  if(bot.hp<bot.maxHp*.42){const pi=closestPickup(bot);if(pi.pk&&pi.dist<260){const a=Math.atan2(pi.pk.y-bot.y,pi.pk.x-bot.x);moveCircle(bot,Math.cos(a)*bot.speed*dt,Math.sin(a)*bot.speed*dt);applyRegen(bot,dt,now);return;}}
+  // heal seek (pickup) — move toward it but still shoot at nearby enemies
+  if(bot.hp<bot.maxHp*.42){const pi=closestPickup(bot);if(pi.pk&&pi.dist<260){
+    const a=Math.atan2(pi.pk.y-bot.y,pi.pk.x-bot.x);
+    moveCircle(bot,Math.cos(a)*bot.speed*dt,Math.sin(a)*bot.speed*dt);
+    // still shoot at nearest visible enemy
+    const near=game.fighters.filter(f=>!f.dead&&f.id!==bot.id).sort((a2,b2)=>dist(bot.x,bot.y,a2.x,a2.y)-dist(bot.x,bot.y,b2.x,b2.y))[0];
+    if(near&&bot.shootCD<=0){
+      const ang=Math.atan2(near.y-bot.y,near.x-bot.x);
+      bot.facing=ang;triggerAttack(bot,ang+(Math.random()-.5)*bot.aimSpread);bot.shootCD=bot.fireRate+rand(.1,.2);
+    }
+    applyRegen(bot,dt,now);return;
+  }}
   // farm boxes
   const bi=closestBox(bot);if(bi.box&&bi.dist<210&&bot.powerLevel<3&&aliveCount()>5){
     const tx=bi.box.x+22,ty=bi.box.y+22,a=Math.atan2(ty-bot.y,tx-bot.x),d=dist(bot.x,bot.y,tx,ty);
@@ -2525,15 +2575,6 @@ persist();
       <button class="bs closeScreenBtn" data-close="settingsScreen">✕</button>
     </div>
 
-    <!-- LANGUAGE -->
-    <div class="panel" style="margin-bottom:14px">
-      <div style="font-family:var(--font);font-weight:700;font-size:14px;margin-bottom:12px">🌍 <span data-t="language">Idioma / Language</span></div>
-      <div style="display:flex;gap:10px">
-        <button id="langEs" class="bp" style="flex:1;padding:12px" onclick="setLang('es')">🇪🇸 Español</button>
-        <button id="langEn" class="bs" style="flex:1;padding:12px" onclick="setLang('en')">🇬🇧 English</button>
-      </div>
-    </div>
-
     <!-- VOLUME -->
     <div class="panel" style="margin-bottom:14px">
       <div style="font-family:var(--font);font-weight:700;font-size:14px;margin-bottom:12px">🔊 <span data-t="volume">Volumen</span></div>
@@ -2561,209 +2602,7 @@ persist();
 <script>
 // ══ SETTINGS SYSTEM ══
 
-// ── TRANSLATIONS ──
-const LANGS={
-  es:{
-    settings:'Configuración', language:'Idioma', volume:'Volumen', mute:'Silenciar',
-    unmute:'Activar', controls:'Controles', resetControls:'Restablecer por defecto',
-    pressKey:'Pulsa una tecla...', play:'JUGAR', brawlers:'Brawlers',
-    skins:'Skins', trophyRoad:'Ruta de Copas', shop:'Tienda',
-    ranks:'Rangos por Brawler', upgrades:'Mejoras de Brawler',
-    starrDrops:'Starr Drops',
-    wins:'Victorias', matches:'Partidas', kills:'Kills', damage:'Daño',
-    trophies:'Copas', coins:'Monedas',
-    pauseTitle:'PAUSA', resume:'▶ Reanudar', leaveMatch:'🏠 Salir al menú',
-    victory:'¡VICTORIA!', playAgain:'⚔️ Jugar de nuevo', menu:'🏠 Menú',
-    newRewards:'Nuevas recompensas',
-    shopSkins:'Skins de tienda', shopOwned:'Mis skins',
-    // brawler screen
-    unlock:'Seleccionar', active:'✓ Activo', locked:'🔒 Bloqueado',
-    starrExclusive:'⭐ Starr Drop exclusivo', totalCups:'copas totales',
-    buyGadget:'🛒', gadgetOwned:'✓ Gadget',
-    // shop
-    bought:'✓ Comprada', needsBrawler:'Requiere brawler', available:'Disponible',
-    buy:'Comprar', equip:'Equipar', equipped:'✓ Equipada', notOwned:'🔒 Bloqueada',
-    // upgrades
-    upgradeBtn:'⬆️ Mejorar', levelMax:'✓ NIVEL MAX',
-    // ranks
-    ranksDesc:'Cada brawler tiene su propio contador de copas y rango.',
-    nextRank:'→', maxRank:'🏆 Máximo',
-    // trophy road
-    claimBtn:'Reclamar', claimedBtn:'✓', roadLocked:'🔒',
-    // starr drop
-    openDrop:'Abrir', dropWin:'¡Nuevo Brawler', dropSkin:'Skin desbloqueada', dropCoins:'Monedas añadidas',
-    noDrops:'No hay drops disponibles',
-    // result
-    positionText:'Posición',
-    // HUD
-    superLabel:'⚡ SÚPER', gadgetLabel:'🔧 GADGET', gadgetReady:'¡Listo!', gadgetNone:'No comprado',
-    moveHint:'mover', shootHint:'disparar', superHint:'súper',
-    gadgetHint:'gadget', pauseHint:'pausa',
-    actionUp:'Mover arriba', actionDown:'Mover abajo',
-    actionLeft:'Mover izquierda', actionRight:'Mover derecha',
-    actionSuper:'Súper', actionGadget:'Gadget',
-    // roles
-    roleHybrid:'Híbrido', roleTank:'Tanque', roleAssassin:'Asesino',
-    roleControl:'Control', roleSniper:'Tirador', roleMythic:'Mítico',
-    roleMech:'Mech', roleSwordsman:'Espadachín', roleCosmic:'Cósmico',
-    roleReaper:'Segador', roleArcanist:'Hechicero', roleElectrician:'Electricista',
-    roleShadow:'Sombrío', rolePyro:'Piromante',
-    closeBtn:'✕',
-    upgradeCoinsLabel:'🪙',
-    upgradeSubtitle:'Mejora las estadísticas de tus brawlers con monedas. Máximo nivel 10.',
-    ranksSubtitle:'Cada brawler tiene su propio contador de copas. Las copas cambian según el brawler que uses.',
-    dropSubtitle:'Gana partidas para conseguir Starr Drops.',
-    skinLabel:'🎨', gadgetInfo:'CD:',
-    bronzeI:'Bronce I',bronzeII:'Bronce II',bronzeIII:'Bronce III',
-    silverI:'Plata I',silverII:'Plata II',silverIII:'Plata III',
-    goldI:'Oro I',goldII:'Oro II',goldIII:'Oro III',
-    diamondI:'Diamante I',diamondII:'Diamante II',diamondIII:'Diamante III',
-    mythicI:'Mítico I',mythicII:'Mítico II',mythicIII:'Mítico III',
-    legendI:'Legendario I',legendII:'Legendario II',legendIII:'Legendario III',
-    masters:'Maestros',
-    grandMaster:'Gran Maestro',
-    demigod:'Semidiós',
-    god:'Dios',
-  },
-  en:{
-    settings:'Settings', language:'Language', volume:'Volume', mute:'Mute',
-    unmute:'Unmute', controls:'Controls', resetControls:'Reset to default',
-    pressKey:'Press a key...', play:'PLAY', brawlers:'Brawlers',
-    skins:'Skins', trophyRoad:'Trophy Road', shop:'Shop',
-    ranks:'Brawler Ranks', upgrades:'Brawler Upgrades',
-    starrDrops:'Starr Drops',
-    wins:'Wins', matches:'Matches', kills:'Kills', damage:'Damage',
-    trophies:'Trophies', coins:'Coins',
-    pauseTitle:'PAUSED', resume:'▶ Resume', leaveMatch:'🏠 Leave match',
-    victory:'VICTORY!', playAgain:'⚔️ Play again', menu:'🏠 Menu',
-    newRewards:'New rewards',
-    shopSkins:'Shop skins', shopOwned:'My skins',
-    unlock:'Select', active:'✓ Active', locked:'🔒 Locked',
-    starrExclusive:'⭐ Starr Drop exclusive', totalCups:'trophies needed',
-    buyGadget:'🛒', gadgetOwned:'✓ Gadget',
-    bought:'✓ Owned', needsBrawler:'Requires brawler', available:'Available',
-    buy:'Buy', equip:'Equip', equipped:'✓ Equipped', notOwned:'🔒 Locked',
-    upgradeBtn:'⬆️ Upgrade', levelMax:'✓ MAX LEVEL',
-    ranksDesc:'Each brawler has its own trophy count and rank.',
-    nextRank:'→', maxRank:'🏆 Max',
-    claimBtn:'Claim', claimedBtn:'✓', roadLocked:'🔒',
-    openDrop:'Open', dropWin:'New Brawler!', dropSkin:'Skin unlocked', dropCoins:'Coins added',
-    noDrops:'No drops available',
-    positionText:'Position',
-    superLabel:'⚡ SUPER', gadgetLabel:'🔧 GADGET', gadgetReady:'Ready!', gadgetNone:'Not purchased',
-    moveHint:'move', shootHint:'shoot', superHint:'super',
-    gadgetHint:'gadget', pauseHint:'pause',
-    actionUp:'Move up', actionDown:'Move down',
-    actionLeft:'Move left', actionRight:'Move right',
-    actionSuper:'Super', actionGadget:'Gadget',
-    roleHybrid:'Hybrid', roleTank:'Tank', roleAssassin:'Assassin',
-    roleControl:'Control', roleSniper:'Sniper', roleMythic:'Mystic',
-    roleMech:'Mech', roleSwordsman:'Swordsman', roleCosmic:'Cosmic',
-    roleReaper:'Reaper', roleArcanist:'Arcanist', roleElectrician:'Electrician',
-    roleShadow:'Shadow', rolePyro:'Pyromancer',
-    closeBtn:'✕',
-    upgradeCoinsLabel:'🪙',
-    upgradeSubtitle:'Upgrade your brawlers\' stats with coins. Maximum level 10.',
-    ranksSubtitle:'Each brawler has its own trophy counter. Trophies change based on the brawler you use.',
-    dropSubtitle:'Win matches to earn Starr Drops.',
-    skinLabel:'🎨', gadgetInfo:'CD:',
-    bronzeI:'Bronze I',bronzeII:'Bronze II',bronzeIII:'Bronze III',
-    silverI:'Silver I',silverII:'Silver II',silverIII:'Silver III',
-    goldI:'Gold I',goldII:'Gold II',goldIII:'Gold III',
-    diamondI:'Diamond I',diamondII:'Diamond II',diamondIII:'Diamond III',
-    mythicI:'Mythic I',mythicII:'Mythic II',mythicIII:'Mythic III',
-    legendI:'Legendary I',legendII:'Legendary II',legendIII:'Legendary III',
-    masters:'Masters',
-    grandMaster:'Grand Master',
-    demigod:'Demigod',
-    god:'God',
-  }
-};
-currentLang=save.lang||'es';
-window._LANGS=LANGS;
-// Override stubs now that LANGS is available
-T=function(key){return(LANGS[currentLang]||LANGS.es)[key]||key;};
-tRole=function(role){
-  const map={
-    'Híbrido':'roleHybrid','Tanque':'roleTank','Asesino':'roleAssassin',
-    'Control':'roleControl','Tirador':'roleSniper','Cósmico':'roleCosmic',
-    'Fantasma':'roleMythic','Mech':'roleMech','Espadachín':'roleSwordsman',
-    'Segador':'roleReaper','Hechicero':'roleArcanist','Electricista':'roleElectrician',
-    'Sombrío':'roleShadow','Piromante':'rolePyro','Francotirador':'roleSniper',
-    'Asalto':'roleControl',
-    'Hybrid':'roleHybrid','Tank':'roleTank','Assassin':'roleAssassin',
-    'Sniper':'roleSniper','Cosmic':'roleCosmic','Ghost':'roleMythic',
-    'Swordsman':'roleSwordsman','Reaper':'roleReaper','Arcanist':'roleArcanist',
-    'Electrician':'roleElectrician','Shadow':'roleShadow','Pyromancer':'rolePyro',
-  };
-  return T(map[role]||'roleHybrid')||role;
-};
-
-function applyLang(){
-  // Static data-t elements
-  document.querySelectorAll('[data-t]').forEach(el=>{
-    const k=el.dataset.t;const v=LANGS[currentLang]?.[k];
-    if(v&&el.tagName!=='BUTTON')el.textContent=v;
-    else if(v&&el.tagName==='BUTTON'){
-      // Keep emoji prefix if present
-      el.textContent=v;
-    }
-  });
-  // Language buttons
-  document.getElementById('langEs').className=currentLang==='es'?'bp':'bs';
-  document.getElementById('langEs').style.cssText='flex:1;padding:12px';
-  document.getElementById('langEn').className=currentLang==='en'?'bp':'bs';
-  document.getElementById('langEn').style.cssText='flex:1;padding:12px';
-  // Nav buttons
-  const navMap={
-    openBrawlersBtn:`👾 ${T('brawlers')}`,
-    openCustomBtn:`🎨 ${T('skins')}`,
-    openPassBtn:`🏆 ${T('trophyRoad')}`,
-    openShopBtn:`🛒 ${T('shop')}`,
-    openRanksBtn:`🏅 ${T('ranks')}`,
-    openUpgradeBtn:`⬆️ ${T('upgrades')}`,
-  };
-  Object.entries(navMap).forEach(([id,txt])=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
-  // Play button
-  const pb=document.getElementById('playBtn');if(pb)pb.textContent=`⚔️ ${T('play')}`;
-  // Stats bar labels
-  const sbdgs=document.querySelectorAll('.sbdg');
-  const statKeys=['wins','matches','kills','damage'];
-  const statIds=['mWins','mMatches','mKills','mDamage'];
-  sbdgs.forEach((el,i)=>{
-    const strong=el.querySelector('strong');
-    if(strong&&statKeys[i])el.childNodes[0].textContent=T(statKeys[i]);
-  });
-  // Controls hint
-  const ctip=document.querySelector('.ctip');
-  if(ctip)ctip.innerHTML=`<span class="key">WASD</span> ${T('moveHint')} · <span class="key">Click</span> ${T('shootHint')} · <span class="key">${getKeyLabel('super').toUpperCase()}</span> ${T('superHint')} · <span class="key">${getKeyLabel('gadget').toUpperCase()}</span> ${T('gadgetHint')} · <span class="key">Esc</span> ${T('pauseHint')}`;
-  // HUD labels
-  const hl=document.querySelectorAll('.hl');
-  if(hl[1])hl[1].innerHTML=`${T('superLabel')} <span id="supPct">0%</span>`;
-  if(hl[2])hl[2].innerHTML=`${T('gadgetLabel')} <span id="gadLabel">—</span>`;
-  // Shop tabs
-  const tabs=document.querySelectorAll('[data-t="shopSkins"],[data-t="shopOwned"]');
-  tabs.forEach(t=>{if(t.dataset.t)t.textContent=T(t.dataset.t);});
-  // Upgrade screen subtitle
-  const usub=document.querySelector('#upgradeScreen .stb+p, #upgradeScreen .sm');
-  if(usub)usub.textContent=T('upgradeSubtitle');
-  // Ranks subtitle
-  const rsub=document.querySelector('#ranksScreen p.sm');
-  if(rsub)rsub.textContent=T('ranksSubtitle');
-  // Starr drop subtitle
-  const dtext=document.querySelector('#dropScreen .sm');
-  if(dtext)dtext.textContent=T('dropSubtitle');
-  // Re-render dynamic screens to pick up translated strings
-  renderBrawlers();
-  renderShop();
-  if(typeof renderUpgradeGrid==='function')renderUpgradeGrid();
-  if(typeof renderRankGrid==='function')renderRankGrid();
-  renderRoad();
-  if(typeof renderKeybindGrid==='function')renderKeybindGrid();
-  renderSelectedPreview();
-}
-window.setLang=function(lang){currentLang=lang;save.lang=lang;persist();applyLang();};
-
+// Translations removed — Spanish only, T() defined in main script
 // ── VOLUME ──
 let masterGain=null,volumeLevel=save.volume!=null?save.volume:.7;
 function getMasterGain(){
@@ -2859,7 +2698,7 @@ window.addEventListener('keydown',e=>{
     keybinds[rebinding]=k;saveKeybinds();rebinding=null;
     document.getElementById('rebindHint').textContent='✓ Guardado';
     setTimeout(()=>{if(document.getElementById('rebindHint'))document.getElementById('rebindHint').textContent='';},1200);
-    renderKeybindGrid();applyLang();
+    renderKeybindGrid();
   }
   e.preventDefault();e.stopPropagation();
 },{capture:true});
@@ -2895,16 +2734,9 @@ const _gameKeyDown=Array.from({length:1}).map(()=>{
 // ── OPEN SETTINGS ──
 document.getElementById('openSettingsBtn').addEventListener('click',()=>{
   renderKeybindGrid();
-  document.getElementById('langEs').className=currentLang==='es'?'bp':'bs';
-  document.getElementById('langEs').style.cssText='flex:1;padding:12px';
-  document.getElementById('langEn').className=currentLang==='en'?'bp':'bs';
-  document.getElementById('langEn').style.cssText='flex:1;padding:12px';
   openScreen('settingsScreen');
 });
 
-// ── INIT ──
-if(save.lang)currentLang=save.lang;
-applyLang();
 
 // ══ MOBILE TOUCH CONTROLS ══
 const isMobile=()=>/Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent)||window.matchMedia('(pointer:coarse)').matches;
