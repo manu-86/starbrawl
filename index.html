@@ -509,7 +509,25 @@ let keybinds={up:'w',down:'s',left:'a',right:'d',super:'e',gadget:'g'};
 function getKeyLabel(action){return keybinds[action]||action;}
 // ═══════════════ CONSTANTS ═══════════════
 const SAVE_KEY = 'starbrawl_v3';
-const TROPHY_GAIN = {1:14,2:9,3:6,4:5,5:3,6:2,7:1,8:0,9:-1,10:-2};
+// Tiered trophy gain based on brawler's individual trophy count
+const TROPHY_TIERS=[
+  // 0–1029
+  {max:1030, gain:{1:12,2:9,3:7,4:4,5:3,6:1,7:0,8:-2,9:-4,10:-7}},
+  // 1030–1999
+  {max:2000, gain:{1:10,2:8,3:5,4:3,5:1,6:-1,7:-3,8:-5,9:-7,10:-10}},
+  // 2000–3999
+  {max:4000, gain:{1:8,2:6,3:4,4:2,5:0,6:-2,7:-4,8:-6,9:-8,10:-11}},
+  // 4000–5999
+  {max:6000, gain:{1:6,2:4,3:2,4:0,5:-2,6:-4,7:-6,8:-8,9:-10,10:-13}},
+  // 6000+
+  {max:Infinity,gain:{1:4,2:2,3:0,4:-2,5:-4,6:-6,7:-8,8:-10,9:-12,10:-15}},
+];
+function getTrophyGain(brawlerTrophies,placement){
+  const tier=TROPHY_TIERS.find(t=>brawlerTrophies<t.max)||TROPHY_TIERS[TROPHY_TIERS.length-1];
+  return tier.gain[placement]??0;
+}
+// Keep TROPHY_GAIN for total trophies (global rank display only)
+const TROPHY_GAIN={1:14,2:9,3:6,4:5,5:3,6:2,7:1,8:0,9:-1,10:-2};
 
 // ═══════════════ GADGET DEFS ═══════════════
 const gadgetDefs = {
@@ -1444,7 +1462,9 @@ function updateHud(){
   document.getElementById('hAlive').textContent=aliveCount();
   document.getElementById('hPower').textContent=p.powerLevel;
   document.getElementById('hKills').textContent=p.kills;
-  const tg=TROPHY_GAIN[aliveCount()]??0;document.getElementById('hTrophyPrev').textContent=(tg>=0?'+':'')+tg;
+  const curBT=(save.brawlerTrophies||{})[save.selBrawler]||0;
+  const tg=getTrophyGain(curBT,aliveCount());
+  document.getElementById('hTrophyPrev').textContent=(tg>=0?'+':'')+tg;
   // gadget bar
   if(p.hasGadget){
     const gd=gadgetDefs[p.bid];const pct=p.gadgetCD<=0?100:Math.round((1-p.gadgetCD/gd.cooldown)*100);
@@ -1763,11 +1783,12 @@ function endMatch(forced=null){
   placement=clamp(placement,1,10);
   if(placement===1){save.stats.wins++;playSound('win');}
   const td=TROPHY_GAIN[placement]??0;save.trophies=Math.max(0,save.trophies+td);
-  // ── per-brawler trophies ──
+  // ── per-brawler trophies (tiered system) ──
   const bid=save.selBrawler;
   if(!save.brawlerTrophies)save.brawlerTrophies={};
   if(save.brawlerTrophies[bid]==null)save.brawlerTrophies[bid]=0;
-  save.brawlerTrophies[bid]=Math.max(0,save.brawlerTrophies[bid]+td);
+  const brawlerTd=getTrophyGain(save.brawlerTrophies[bid],placement);
+  save.brawlerTrophies[bid]=Math.max(0,save.brawlerTrophies[bid]+brawlerTd);
   const kills=p?.kills||0,dmg=Math.round(p?.totalDmg||0);
   save.stats.kills=(save.stats.kills||0)+kills;save.stats.damage=(save.stats.damage||0)+dmg;
   // ── coin rewards by placement + kills ──
@@ -1793,7 +1814,7 @@ function endMatch(forced=null){
   game.state='results';hideScreens();openScreen('resultScreen');
   document.getElementById('rPlace').textContent='#'+placement;
   document.getElementById('rText').textContent=placement===1?`🏆 ${T('victory')}`:`${T('positionText')} ${placement}ª`;
-  document.getElementById('rTrophies').textContent=(td>=0?'+':'')+td;
+  document.getElementById('rTrophies').textContent=(brawlerTd>=0?'+':'')+brawlerTd;
   document.getElementById('rKills').textContent=kills;
   document.getElementById('rDamage').textContent=dmg;
   document.getElementById('rCoins').textContent='+'+totalCoins;
