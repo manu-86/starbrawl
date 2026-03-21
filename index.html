@@ -725,7 +725,14 @@ function defaultSave(){
 function loadSave(){
   try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave();
     const p=JSON.parse(r),b=defaultSave();
-    return{...b,...p,selSkins:{...b.selSkins,...(p.selSkins||{})},stats:{...b.stats,...(p.stats||{})}};
+    const merged={...b,...p,selSkins:{...b.selSkins,...(p.selSkins||{})},stats:{...b.stats,...(p.stats||{})}};
+    // Sanitize: ensure selBrawler is valid (BD may have changed between versions)
+    if(!merged.selBrawler||!merged.ownedBrawlers?.includes(merged.selBrawler)){
+      merged.selBrawler='nova';
+      if(!Array.isArray(merged.ownedBrawlers)||!merged.ownedBrawlers.length)merged.ownedBrawlers=['nova'];
+      if(!merged.ownedSkins?.includes('nova_classic'))merged.ownedSkins=['nova_classic'];
+    }
+    return merged;
   }catch{return defaultSave();}
 }
 const save=loadSave();
@@ -1732,6 +1739,12 @@ function drawGame(){
 // ═══════════════ MENU PREVIEW CANVAS ═══════════════
 let previewAnim=0;
 function drawMenuPreview(){
+  // Guard: reset selBrawler if it no longer exists in BD
+  if(!BD[save.selBrawler]){
+    save.selBrawler='nova';
+    if(!save.ownedBrawlers.includes('nova'))save.ownedBrawlers=['nova'];
+    persist();
+  }
   const canvas=document.getElementById('menuPreviewCanvas');if(!canvas)return;
   const c=canvas.getContext('2d');const W=canvas.width,H=canvas.height;
   previewAnim+=0.04;
