@@ -307,7 +307,8 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
           <button class="nbtn" id="openShopBtn">🛒 Tienda</button>
           <button class="nbtn" id="openRanksBtn" style="grid-column:1/-1">🏅 Rangos de Brawler</button>
           <button class="nbtn" id="openUpgradeBtn" style="grid-column:1/-1">⬆️ Mejoras de Brawler</button>
-          <button class="nbtn" id="openSettingsBtn" style="grid-column:1/-1">⚙️ <span data-t="settings">Configuración</span></button>
+          <button class="nbtn" id="openSettingsBtn" style="grid-column:1/-1">⚙️ Configuración</button>
+          <button class="nbtn" id="toggleTouchBtn" style="grid-column:1/-1;display:none">📱 Controles táctiles: OFF</button>
         </div>
         <div class="sbar">
           <div class="sbdg">Victorias<strong id="mWins">0</strong></div>
@@ -625,7 +626,7 @@ function defaultSave(){
     ownedSkins:['nova_classic'],selSkins:ss,claimedRoad:[],ownedGadgets:[],
     stats:{wins:0,matches:0,kills:0,damage:0},soundOn:true,
     brawlerTrophies:{nova:0},starrDrops:0,
-    brawlerLevels:{},lang:'es',volume:.7,keybinds:{}};
+    brawlerLevels:{},lang:'es',volume:.7,keybinds:{},touchEnabled:null};
 }
 function loadSave(){
   try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave();
@@ -2739,7 +2740,7 @@ document.getElementById('openSettingsBtn').addEventListener('click',()=>{
 
 
 // ══ MOBILE TOUCH CONTROLS ══
-const isMobile=()=>/Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent)||window.matchMedia('(pointer:coarse)').matches;
+const isMobile=()=>('ontouchstart' in window)||navigator.maxTouchPoints>0||window.matchMedia('(pointer:coarse)').matches;
 
 // Joystick state
 const joy={active:false,id:-1,baseX:0,baseY:0,dx:0,dy:0,maxR:48};
@@ -2872,13 +2873,27 @@ updateHud=function(){
 const _origStartMatchMobile=startMatch;
 startMatch=function(){
   _origStartMatchMobile();
-  if(isMobile())showTouchControls(true);
+  if(save.touchEnabled||isMobile())showTouchControls(true);
 };
 const _origGoToMenuMobile=goToMenu;
 goToMenu=function(){
   showTouchControls(false);
   _origGoToMenuMobile();
 };
+
+// Touch toggle button
+const toggleBtn=document.getElementById('toggleTouchBtn');
+// Auto-enable on touch devices
+if(isMobile()&&save.touchEnabled==null)save.touchEnabled=true;
+if(save.touchEnabled==null)save.touchEnabled=false;
+toggleBtn.style.display='block';
+toggleBtn.textContent=`📱 Controles táctiles: ${save.touchEnabled?'ON':'OFF'}`;
+toggleBtn.className=save.touchEnabled?'nbtn bp':'nbtn';
+toggleBtn.addEventListener('click',()=>{
+  save.touchEnabled=!save.touchEnabled;persist();
+  toggleBtn.textContent=`📱 Controles táctiles: ${save.touchEnabled?'ON':'OFF'}`;
+  toggleBtn.className=save.touchEnabled?'nbtn bp':'nbtn';
+});
 
 // Prevent context menu and default touch behaviors on canvas
 GC.addEventListener('contextmenu',e=>e.preventDefault());
