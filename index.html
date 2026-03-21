@@ -133,6 +133,9 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
 .rank-gold{color:#ffd700;background:rgba(255,215,0,.12)}.rank-diamond{color:#b9f2ff;background:rgba(0,212,255,.12)}
 .rank-mythic{color:#da70d6;background:rgba(218,112,214,.12)}.rank-legendary{color:#ffd76a;background:rgba(255,215,106,.15)}
 .rank-masters{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,.2),rgba(180,0,255,.2));border-color:rgba(255,215,0,.8)}
+.rank-grandmaster{color:#00ffcc;background:linear-gradient(135deg,rgba(0,255,200,.15),rgba(0,180,255,.1));border-color:rgba(0,255,200,.7)}
+.rank-demigod{color:#ff88ff;background:linear-gradient(135deg,rgba(255,100,255,.18),rgba(180,0,255,.15));border-color:rgba(255,100,255,.75)}
+.rank-god{color:#ffd700;background:linear-gradient(135deg,rgba(255,215,0,.25),rgba(255,60,0,.2));border-color:rgba(255,215,0,1);text-shadow:0 0 8px rgba(255,215,0,.8)}
 .rank-progress-wrap{margin-top:6px}
 .rank-progress{height:5px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:3px}
 .rank-progress-fill{height:100%;border-radius:999px;transition:width .3s ease}
@@ -270,7 +273,7 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
 <!-- BRAWLERS -->
 <div id="brawlersScreen" class="screen">
   <div class="card">
-    <div class="stb"><h2>👾 Brawlers</h2><button class="bs closeScreenBtn" data-close="brawlersScreen">✕</button></div>
+    <div class="stb"><h2>👾 <span data-t="brawlers">Brawlers</span></h2><button class="bs closeScreenBtn" data-close="brawlersScreen">✕</button></div>
     <div class="g4" id="brawlerGrid"></div>
   </div>
 </div>
@@ -278,7 +281,7 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
 <!-- SKINS / CUSTOMIZATION -->
 <div id="customScreen" class="screen">
   <div class="card">
-    <div class="stb"><h2>🎨 Skins — <span id="custTitle">Nova</span></h2><button class="bs closeScreenBtn" data-close="customScreen">✕</button></div>
+    <div class="stb"><h2>🎨 <span data-t="skins">Skins</span> — <span id="custTitle">Nova</span></h2><button class="bs closeScreenBtn" data-close="customScreen">✕</button></div>
     <div class="g4" id="custGrid"></div>
   </div>
 </div>
@@ -286,10 +289,10 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
 <!-- SHOP -->
 <div id="shopScreen" class="screen">
   <div class="card">
-    <div class="stb"><h2>🛒 Tienda &nbsp;<span style="font-size:.7em;color:var(--accent2)">🪙 <span id="shopCoins">0</span></span></h2><button class="bs closeScreenBtn" data-close="shopScreen">✕</button></div>
+    <div class="stb"><h2>🛒 <span data-t="shop">Tienda</span> &nbsp;<span style="font-size:.7em;color:var(--accent2)">🪙 <span id="shopCoins">0</span></span></h2><button class="bs closeScreenBtn" data-close="shopScreen">✕</button></div>
     <div class="tbbar">
-      <button class="tb active" data-tab="shopSkins">Skins de tienda</button>
-      <button class="tb" data-tab="shopOwned">Mis skins</button>
+      <button class="tb active" data-tab="shopSkins" data-t="shopSkins">Skins de tienda</button>
+      <button class="tb" data-tab="shopOwned" data-t="shopOwned">Mis skins</button>
     </div>
     <div id="tab-shopSkins" class="tc g4"></div>
     <div id="tab-shopOwned" class="tc hidden g4"></div>
@@ -299,7 +302,7 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
 <!-- TROPHY ROAD -->
 <div id="passScreen" class="screen">
   <div class="card">
-    <div class="stb"><h2>🏆 Ruta de Copas &nbsp;<span style="font-size:.7em;color:var(--accent2)">🏆 <span id="passTrophies">0</span> / 20.000</span></h2><button class="bs closeScreenBtn" data-close="passScreen">✕</button></div>
+    <div class="stb"><h2>🏆 <span data-t="trophyRoad">Ruta de Copas</span> &nbsp;<span style="font-size:.7em;color:var(--accent2)">🏆 <span id="passTrophies">0</span> / 20.000</span></h2><button class="bs closeScreenBtn" data-close="passScreen">✕</button></div>
     <div class="rdscroll"><div class="rdrow" id="rewardTrack"></div></div>
   </div>
 </div>
@@ -307,10 +310,10 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
 <!-- PAUSE -->
 <div id="pauseScreen" class="screen">
   <div class="card pc">
-    <h2>⏸ PAUSA</h2>
+    <h2>⏸ <span data-t="pauseTitle">PAUSA</span></h2>
     <div style="display:flex;flex-direction:column;gap:11px;align-items:center">
-      <button class="bp" id="resumeBtn" style="padding:13px 38px;font-size:15px">▶ Reanudar</button>
-      <button class="bdanger" id="leaveBtn" style="padding:11px 30px">🏠 Salir al menú</button>
+      <button class="bp" id="resumeBtn" style="padding:13px 38px;font-size:15px" data-t="resume">▶ Reanudar</button>
+      <button class="bdanger" id="leaveBtn" style="padding:11px 30px" data-t="leaveMatch">🏠 Salir al menú</button>
     </div>
   </div>
 </div>
@@ -321,15 +324,15 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
     <div class="placement" id="rPlace">#1</div>
     <p id="rText" style="font-size:17px;font-family:var(--font);font-weight:700;margin:8px 0"></p>
     <div class="rgrid">
-      <div class="rstat"><div class="v" id="rTrophies">+0</div><div class="l">🏆 Copas</div></div>
+      <div class="rstat"><div class="v" id="rTrophies">+0</div><div class="l">🏆 <span data-t="trophies">Copas</span></div></div>
       <div class="rstat"><div class="v" id="rKills">0</div><div class="l">💀 Kills</div></div>
-      <div class="rstat"><div class="v" id="rDamage">0</div><div class="l">⚔️ Daño</div></div>
-      <div class="rstat"><div class="v" id="rCoins">0</div><div class="l">🪙 Monedas</div></div>
+      <div class="rstat"><div class="v" id="rDamage">0</div><div class="l">⚔️ <span data-t="damage">Daño</span></div></div>
+      <div class="rstat"><div class="v" id="rCoins">0</div><div class="l">🪙 <span data-t="coins">Monedas</span></div></div>
     </div>
     <div id="rUnlocks" style="margin-bottom:14px"></div>
     <div style="display:flex;justify-content:center;gap:10px">
-      <button class="bp" id="playAgainBtn" style="padding:13px 26px;font-size:14px">⚔️ Jugar de nuevo</button>
-      <button class="bs" id="toMenuBtn" style="padding:13px 26px;font-size:14px">🏠 Menú</button>
+      <button class="bp" id="playAgainBtn" style="padding:13px 26px;font-size:14px" data-t="playAgain">⚔️ Jugar de nuevo</button>
+      <button class="bs" id="toMenuBtn" style="padding:13px 26px;font-size:14px" data-t="menu">🏠 Menú</button>
     </div>
   </div>
 </div>
@@ -357,7 +360,39 @@ const gadgetDefs = {
   surge: {name:'Sobrecarga', desc:'Siguiente 4 disparos: 2x daño y velocidad', icon:'⚡', cost:1000, cooldown:18,
           action:(f)=>{ f.overcharge=4; burst(f.x,f.y,'#aaff00',20); addFeedIf(f,'⚡ ¡Sobrecargado!'); }},
 };
-function addFeedIf(f,msg){if(f.isPlayer)addFeed(msg);}
+const FEED_EN={
+  '🛡 ¡Escudo activado!':'🛡 Shield activated!','☠️ Nube venenosa':'☠️ Poison cloud!',
+  '🔥 Muro de llamas':'🔥 Firewall!','🔩 Trampa colocada':'🔩 Trap placed!',
+  '⚡ ¡Sobrecargado!':'⚡ Overcharged!','🪞 Espejo Oscuro':'🪞 Dark Mirror!',
+  '👻 ¡Invisible!':'👻 Invisible!','⚙️ Overdrive activado':'⚙️ Overdrive!',
+  '⚔️ ¡Corte Rápido!':'⚔️ Quick Slash!','💥 ¡Combustión!':'💥 Combustion!',
+  '❄️ ¡Tiempo detenido!':'❄️ Time frozen!','💀 Paso Sombrío':'💀 Shadow Step!',
+  '🌙 ¡Lunas explosivas!':'🌙 Explosive Moons!','🩸 ¡Teletransporte!':'🩸 Teleport!',
+  '💠 ¡Teleportado!':'💠 Teleported!','💚 Curación':'💚 Healed',
+  '⚡ Carga súper':'⚡ Super charged','🔥 Racha terminada.':'🔥 Streak ended.',
+  '📦 Cubo de poder':'📦 Power cube',
+  '⭐ Nova: ¡Ráfaga Estelar!':'⭐ Nova: Star Burst!',
+  '⭐ Atlas: ¡Descarga Total!':'⭐ Atlas: Full Blast!',
+  '⭐ Viper: ¡Aguijón Infinito!':'⭐ Viper: Infinite Sting!',
+  '⭐ Ember: ¡Lluvia de Fuego!':'⭐ Ember: Fire Rain!',
+  '⭐ Glitch: ¡Sobrecarga Láser!':'⭐ Glitch: Laser Overload!',
+  '⭐ Lynx: ¡Disparo Mortal!':'⭐ Lynx: Deadly Shot!',
+  '⭐ Surge: ¡Descarga Máxima!':'⭐ Surge: Max Discharge!',
+  '⭐ Blaze: ¡Infierno!':'⭐ Blaze: Inferno!',
+  '⭐ Hex: ¡Maldición Hexagonal!':'⭐ Hex: Hex Curse!',
+  '⭐ Volt: ¡Tormenta Eléctrica!':'⭐ Volt: Electric Storm!',
+  '⭐ Crypt: ¡Maldición de Sombra!':'⭐ Crypt: Shadow Curse!',
+  '⭐ Prism: ¡Prisma Total!':'⭐ Prism: Full Prism!',
+  '⭐ Wraith: ¡Fantasma Letal!':'⭐ Wraith: Lethal Ghost!',
+  '⭐ Rex-D: ¡Modo Mech!':'⭐ Rex-D: Mech Mode!',
+  '⭐ Kira: ¡Danza de Hojas!':'⭐ Kira: Blade Dance!',
+  '⭐ Orb: ¡Expansión Cósmica!':'⭐ Orb: Cosmic Expansion!',
+  '⭐ Shade: ¡Segadura!':'⭐ Shade: Reap!',
+};
+function addFeedIf(f,msg){
+  if(!f.isPlayer)return;
+  addFeed(currentLang==='en'&&FEED_EN[msg]?FEED_EN[msg]:msg);
+}
 
 // ═══════════════ BRAWLER DEFS ═══════════════
 const BD = {
@@ -488,7 +523,7 @@ const ROAD = (() => {
 function rwLabel(rw) {
   if(rw.type==='coins') return `${rw.amt} 🪙`;
   if(rw.type==='skin') return `Skin ${SD[rw.id]?.name||rw.id}`;
-  if(rw.type==='brawler') return `Brawler ${BD[rw.bid]?.name||rw.bid}`;
+  if(rw.type==='brawler') return `${currentLang==='en'?'Unlocks':'Desbloquea'} ${BD[rw.bid]?.name||rw.bid}`;
   return '?';
 }
 
@@ -742,7 +777,7 @@ function startMatch(){
   document.getElementById('sndBtn').classList.add('show');
   document.getElementById('sndBtn').textContent=soundOn?'🔊':'🔇';
   hideScreens();updateHud();
-  addFeed(`⚔️ ¡Partida iniciada! Dificultad: ${diff.label}`);
+  addFeed(`⚔️ ${currentLang==='en'?'Match started! Difficulty:':'¡Partida iniciada! Dificultad:'} ${diff.label}`);
 }
 const hideScreens=()=>document.querySelectorAll('.screen').forEach(el=>el.classList.remove('show'));
 const openScreen=id=>document.getElementById(id).classList.add('show');
@@ -763,7 +798,7 @@ function updateParticles(dt){
 // ═══════════════ GADGET ACTIONS ═══════════════
 function activateGadget(){
   const p=pObj();if(!p||p.dead)return;
-  if(!p.hasGadget)return addFeed('🔧 No tienes gadget. Cómpralo en Brawlers.');
+  if(!p.hasGadget)return addFeed(currentLang==='en'?'🔧 No gadget. Buy it in Brawlers.':'🔧 No tienes gadget. Cómpralo en Brawlers.');
   if(p.gadgetCD>0)return;
   const gd=gadgetDefs[p.bid];if(!gd)return;
   p.gadgetCD=gd.cooldown;
@@ -1060,8 +1095,8 @@ function processPickups(){
     const p=game.pickups[i];
     for(const f of game.fighters){
       if(f.dead)continue;if(dist(p.x,p.y,f.x,f.y)<p.r+f.r){
-        if(p.type==='heal'){f.hp=clamp(f.hp+f.maxHp*.3,0,f.maxHp);burst(p.x,p.y,'#87f2c7',14);if(f.isPlayer){addFeed('💚 Curación');playSound('pickup');}}
-        else if(p.type==='charge'){f.supCharge=clamp(f.supCharge+52,0,f.supMax);burst(p.x,p.y,'#ffd76a',14);if(f.isPlayer){addFeed('⚡ Carga súper');playSound('pickup');}}
+        if(p.type==='heal'){f.hp=clamp(f.hp+f.maxHp*.3,0,f.maxHp);burst(p.x,p.y,'#87f2c7',14);if(f.isPlayer){addFeed(currentLang==='en'?'💚 Healed':'💚 Curación');playSound('pickup');}}
+        else if(p.type==='charge'){f.supCharge=clamp(f.supCharge+52,0,f.supMax);burst(p.x,p.y,'#ffd76a',14);if(f.isPlayer){addFeed(currentLang==='en'?'⚡ Super charged':'⚡ Carga súper');playSound('pickup');}}
         else if(p.type==='power')applyPowerCube(f,p.amt||1);
         game.pickups.splice(i,1);break;
       }
@@ -1075,7 +1110,7 @@ function applyRegen(f,dt,now){
   if(f.shieldTimer>0){f.shieldTimer=Math.max(0,f.shieldTimer-dt);if(f.shieldTimer<=0)f.shieldHp=0;}
   if(f.trapped>0)f.trapped=Math.max(0,f.trapped-dt);
   if(f.chargeActive&&f.dashTime<=0)f.chargeActive=false;
-  if(f.streakTimer>0){f.streakTimer-=dt;if(f.streakTimer<=0&&f.streakBoost){f.streakBoost=false;f.damage/=1.2;f.speed-=20;f.killStreak=0;if(f.isPlayer)addFeed('🔥 Racha terminada.');}}
+  if(f.streakTimer>0){f.streakTimer-=dt;if(f.streakTimer<=0&&f.streakBoost){f.streakBoost=false;f.damage/=1.2;f.speed-=20;f.killStreak=0;if(f.isPlayer)addFeed(currentLang==='en'?'🔥 Streak ended.':'🔥 Racha terminada.');}}
   if(f.dead)return;
   const q=now-Math.max(f.lastAttackT,f.lastDamagedT);
   if(q>=5&&f.hp<f.maxHp)f.hp=Math.min(f.maxHp,f.hp+f.maxHp*.07*dt);
@@ -1084,18 +1119,18 @@ function applyRegen(f,dt,now){
 // ═══════════════ GAS ═══════════════
 function updateGas(dt,now){
   const g=game.gas;g.timer+=dt;
-  if(!g.active&&!g.warned&&g.timer>=g.delay-8){g.warned=true;addFeed(`⏳ Zona tóxica en ${Math.round(g.delay-g.timer)}s`);}
+  if(!g.active&&!g.warned&&g.timer>=g.delay-8){g.warned=true;addFeed(`⏳ ${currentLang==='en'?`Toxic zone in ${Math.round(g.delay-g.timer)}s`:`Zona tóxica en ${Math.round(g.delay-g.timer)}s`}`);}
   if(!g.active&&g.timer>=g.delay){
     g.active=true;const diag=Math.hypot(game.world.w,game.world.h);
     g.radius=diag*.54;g.targetR=g.radius*.5;
     g.cx=game.world.w/2+rand(-280,280);g.cy=game.world.h/2+rand(-240,240);
     g.rate=(g.radius-g.targetR)/26;
-    addFeed('⚠️ ¡Zona tóxica activada!');playSound('zone');
+    addFeed(currentLang==='en'?'⚠️ Toxic zone activated!':'⚠️ ¡Zona tóxica activada!');playSound('zone');
     document.getElementById('zoneBadge').classList.add('on');
   }
   if(g.active){
     if(g.radius>g.targetR+1)g.radius=Math.max(g.targetR,g.radius-g.rate*dt);
-    else{g.phase++;g.targetR=Math.max(100,g.radius*.46);g.dmg=3+g.phase*2.5;g.rate=(g.radius-g.targetR)/20;if(g.phase<=5)addFeed(`⚠️ Zona fase ${g.phase}`);}
+    else{g.phase++;g.targetR=Math.max(100,g.radius*.46);g.dmg=3+g.phase*2.5;g.rate=(g.radius-g.targetR)/20;if(g.phase<=5)addFeed(`⚠️ ${currentLang==='en'?`Zone phase ${g.phase}`:`Zona fase ${g.phase}`}`);}
     g.dtick+=dt;if(g.dtick>=g.devery){g.dtick=0;
       for(const f of game.fighters){if(f.dead)continue;
         if(dist(f.x,f.y,g.cx,g.cy)>g.radius){f.hp-=g.dmg;f.lastDamagedT=now;f.revealTimer=.4;spawnDmg(f.x,f.y-30,g.dmg,'#cc44ff');if(f.isPlayer)shake(2,.1);if(f.hp<=0)defeatFighter(f,null);}
@@ -1103,7 +1138,7 @@ function updateGas(dt,now){
     }
     const p=pObj();if(p&&!p.dead){
       const out=dist(p.x,p.y,g.cx,g.cy)>g.radius;
-      document.getElementById('zoneBadge').textContent=out?'⚠️ FUERA DE ZONA':'🛡 En zona';
+      document.getElementById('zoneBadge').textContent=out?(currentLang==='en'?'⚠️ OUTSIDE ZONE':'⚠️ FUERA DE ZONA'):(currentLang==='en'?'🛡 In zone':'🛡 En zona');
       document.getElementById('zoneBadge').style.background=out?'rgba(160,0,255,.3)':'rgba(0,180,80,.15)';
     }
   }
@@ -1226,10 +1261,10 @@ function updateHud(){
   // gadget bar
   if(p.hasGadget){
     const gd=gadgetDefs[p.bid];const pct=p.gadgetCD<=0?100:Math.round((1-p.gadgetCD/gd.cooldown)*100);
-    document.getElementById('gadLabel').textContent=p.gadgetCD<=0?`${gd.icon} ¡Listo!`:`${gd.icon} ${p.gadgetCD.toFixed(1)}s`;
+    document.getElementById('gadLabel').textContent=p.gadgetCD<=0?`${gd.icon} ${T('gadgetReady')}`:`${gd.icon} ${p.gadgetCD.toFixed(1)}s`;
     document.getElementById('gadFill').style.width=pct+'%';
   }else{
-    document.getElementById('gadLabel').textContent='No comprado';
+    document.getElementById('gadLabel').textContent=T('gadgetNone');
     document.getElementById('gadFill').style.width='0%';
   }
   const shoot=p.shootCD<=0?'✓':p.shootCD.toFixed(1)+'s';
@@ -1562,21 +1597,24 @@ function endMatch(forced=null){
   if(Math.random()<chance){
     save.starrDrops=(save.starrDrops||0)+1;
     gotDrop=true;
-    addFeed(`⭐ ¡Starr Drop conseguido! (${Math.round(chance*100)}%)`);
+    addFeed(`⭐ ${currentLang==='en'?'Starr Drop earned!':'¡Starr Drop conseguido!'} (${Math.round(chance*100)}%)`);
   }
   // ── streak bonus coins ──
-  if(p&&p.killStreak>=3){const streakBonus=p.killStreak*21;save.coins+=streakBonus;addFeed(`🔥 Bonus racha: +🪙${streakBonus}`);}
+  if(p&&p.killStreak>=3){const streakBonus=p.killStreak*21;save.coins+=streakBonus;addFeed(`🔥 ${currentLang==='en'?`Streak bonus: +🪙${streakBonus}`:`Bonus racha: +🪙${streakBonus}`}`);}
   const unlocks=claimAvailableRoad();persist();
   document.getElementById('hud').classList.remove('show');document.getElementById('zoneBadge').classList.remove('on');
   game.state='results';hideScreens();openScreen('resultScreen');
   document.getElementById('rPlace').textContent='#'+placement;
-  document.getElementById('rText').textContent=placement===1?'🏆 ¡VICTORIA!':`Posición ${placement}ª`;
+  document.getElementById('rText').textContent=placement===1?`🏆 ${T('victory')}`:`${T('positionText')} ${placement}ª`;
   document.getElementById('rTrophies').textContent=(td>=0?'+':'')+td;
   document.getElementById('rKills').textContent=kills;
   document.getElementById('rDamage').textContent=dmg;
   document.getElementById('rCoins').textContent='+'+totalCoins;
-  const dropLine=gotDrop?`<div class="sm" style="color:var(--accent2);margin-top:6px">⭐ +1 Starr Drop obtenido</div>`:'';
-  document.getElementById('rUnlocks').innerHTML=(unlocks.length?`<div class="panel" style="text-align:left"><strong style="color:var(--accent2)">🎁 Recompensas:</strong><br><span class="sm">${unlocks.join(' · ')}</span></div>`:'')+dropLine;
+  const dropLine=gotDrop?`<div class="sm" style="color:var(--accent2);margin-top:6px">⭐ +1 ${T('starrDrops')}</div>`:'';
+  document.getElementById('rUnlocks').innerHTML=(unlocks.length?`<div class="panel" style="text-align:left"><strong style="color:var(--accent2)">🎁 ${T('newRewards')}:</strong><br><span class="sm">${unlocks.join(' · ')}</span></div>`:'')+dropLine;
+  // Translate result buttons
+  document.getElementById('playAgainBtn').textContent=T('playAgain');
+  document.getElementById('toMenuBtn').textContent=T('menu');
   renderAll();
 }
 
@@ -1588,21 +1626,21 @@ function renderBrawlers(){
     const rc=rarityC[def.rarity]||'#ccc';const gd=gadgetDefs[def.id];
     const hasGad=save.ownedGadgets.includes(def.id);
     const isStarrOnly=def.unlock>=99999;
-    const howToGet=isStarrOnly?'⭐ Starr Drop exclusivo':`🏆 ${def.unlock} copas totales`;
+    const howToGet=isStarrOnly?T('starrExclusive'):`🏆 ${def.unlock} ${T('totalCups')}`;
     return`<div class="ic" style="${!unlocked?'opacity:.68;border-color:rgba(255,255,255,.08)':''}">
       <div style="width:56px;height:56px;margin-bottom:10px;position:relative;display:inline-block">
         <canvas id="bc_${def.id}" width="56" height="56" style="border-radius:12px;${!unlocked?'filter:grayscale(.7)':''}"></canvas>
         ${!unlocked?`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;border-radius:12px;background:rgba(0,0,0,.35)">🔒</div>`:''}
       </div>
-      <div class="rtag" style="background:${rc}22;color:${rc};border:1px solid ${rc}44">${def.role}</div>
+      <div class="rtag" style="background:${rc}22;color:${rc};border:1px solid ${rc}44">${tRole(def.role)}</div>
       <h3 style="${!unlocked?'color:var(--muted)':''}">${def.name}</h3>
       <p>${def.desc}</p>
       <div class="sm" style="margin-bottom:8px">❤️${def.hp} ⚔️${def.damage} ⚡${def.speed}</div>
       ${!unlocked?`<div class="sm" style="color:var(--accent2);margin-bottom:8px">${howToGet}</div>`:''}
-      ${gd?`<div class="gadbox"><strong>${gd.icon} ${gd.name}</strong>${gd.desc}<br><span style="color:var(--muted)">CD: ${gd.cooldown}s · 🪙${gd.cost}</span></div>`:''}
+      ${gd?`<div class="gadbox"><strong>${gd.icon} ${gd.name}</strong>${gd.desc}<br><span style="color:var(--muted)">${T('gadgetInfo')} ${gd.cooldown}s · 🪙${gd.cost}</span></div>`:''}
       <div class="ar">
-        <button class="${unlocked?'bp':'bs'}" style="flex:1;font-size:11px" ${unlocked?'':'disabled'} onclick="selectBrawler('${def.id}')">${save.selBrawler===def.id?'✓ Activo':unlocked?'Seleccionar':'🔒 Bloqueado'}</button>
-        ${gd&&unlocked?`<button class="${hasGad?'bs':'borange'}" style="font-size:11px" ${hasGad?'disabled':''} onclick="buyGadget('${def.id}')">${hasGad?'✓ Gadget':`🛒 🪙${gd.cost}`}</button>`:''}
+        <button class="${unlocked?'bp':'bs'}" style="flex:1;font-size:11px" ${unlocked?'':'disabled'} onclick="selectBrawler('${def.id}')">${save.selBrawler===def.id?T('active'):unlocked?T('unlock'):T('locked')}</button>
+        ${gd&&unlocked?`<button class="${hasGad?'bs':'borange'}" style="font-size:11px" ${hasGad?'disabled':''} onclick="buyGadget('${def.id}')">${hasGad?T('gadgetOwned'):`${T('buyGadget')} 🪙${gd.cost}`}</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1620,7 +1658,7 @@ window.selectBrawler=id=>{if(!save.ownedBrawlers.includes(id))return;save.selBra
 window.buyGadget=id=>{
   const gd=gadgetDefs[id];if(!gd||save.ownedGadgets.includes(id))return;
   if(!save.ownedBrawlers.includes(id))return;
-  if(save.coins<gd.cost){alert(`Necesitas 🪙${gd.cost} monedas. Tienes ${save.coins}.`);return;}
+  if(save.coins<gd.cost){alert(currentLang==='en'?`Need 🪙${gd.cost}. You have 🪙${save.coins}.`:`Necesitas 🪙${gd.cost} monedas. Tienes ${save.coins}.`);return;}
   save.coins-=gd.cost;save.ownedGadgets.push(id);persist();renderAll();
 };
 window.buySkin=id=>{
@@ -1634,25 +1672,25 @@ function renderShop(){
   document.getElementById('shopCoins').textContent=save.coins;
   document.getElementById('tab-shopSkins').innerHTML=Object.values(SD).filter(s=>s.src==='shop').map(item=>{
     const owned=save.ownedSkins.includes(item.id),bUnlocked=save.ownedBrawlers.includes(item.b);
-    return`<div class="ic"><div style="width:52px;height:52px;border-radius:50%;background:${item.c};border:3px solid ${item.s}33;margin-bottom:9px"></div><h3>${BD[item.b]?.name} · ${item.name}</h3><div class="sp">🪙 ${item.price}</div><div class="sm" style="margin-bottom:8px">${owned?'✓ Comprada':!bUnlocked?'Requiere brawler':'Disponible'}</div><button class="${owned?'bs':'bg'}" style="width:100%;font-size:12px" ${owned||!bUnlocked||save.coins<item.price?'disabled':''} onclick="buySkin('${item.id}')">${owned?'Comprada':'Comprar'}</button></div>`;
+    return`<div class="ic"><div style="width:52px;height:52px;border-radius:50%;background:${item.c};border:3px solid ${item.s}33;margin-bottom:9px"></div><h3>${BD[item.b]?.name} · ${item.name}</h3><div class="sp">🪙 ${item.price}</div><div class="sm" style="margin-bottom:8px">${owned?T('bought'):!bUnlocked?T('needsBrawler'):T('available')}</div><button class="${owned?'bs':'bg'}" style="width:100%;font-size:12px" ${owned||!bUnlocked||save.coins<item.price?'disabled':''} onclick="buySkin('${item.id}')">${owned?T('bought'):T('buy')}</button></div>`;
   }).join('');
   document.getElementById('tab-shopOwned').innerHTML=save.ownedSkins.map(id=>{
     const item=SD[id];if(!item)return'';const eq=save.selSkins[item.b]===id;
-    return`<div class="ic"><div style="width:52px;height:52px;border-radius:50%;background:${item.c};border:3px solid ${item.s}44;margin-bottom:9px"></div><h3>${BD[item.b]?.name} · ${item.name}</h3><div class="sm" style="margin-bottom:8px">${item.src==='road'?'🏆 Ruta':item.src==='shop'?'🛒 Tienda':'🎁 Base'}</div><button class="${eq?'bs':'bgreen'}" style="width:100%;font-size:12px" ${eq?'disabled':''} onclick="equipSkin('${id}')">${eq?'✓ Equipada':'Equipar'}</button></div>`;
+    return`<div class="ic"><div style="width:52px;height:52px;border-radius:50%;background:${item.c};border:3px solid ${item.s}44;margin-bottom:9px"></div><h3>${BD[item.b]?.name} · ${item.name}</h3><div class="sm" style="margin-bottom:8px">${item.src==='road'?'🏆 '+T('trophyRoad'):item.src==='shop'?'🛒 '+T('shop'):'🎁 Base'}</div><button class="${eq?'bs':'bgreen'}" style="width:100%;font-size:12px" ${eq?'disabled':''} onclick="equipSkin('${id}')">${eq?T('equipped'):T('equip')}</button></div>`;
   }).join('');
 }
 function renderCustom(){
   const c=save.selBrawler;document.getElementById('custTitle').textContent=BD[c]?.name||c;
   document.getElementById('custGrid').innerHTML=Object.values(SD).filter(s=>s.b===c).map(item=>{
     const owned=save.ownedSkins.includes(item.id),eq=save.selSkins[c]===item.id;
-    return`<div class="ic" style="${eq?'border-color:rgba(0,212,255,.55)':''}"><div style="width:52px;height:52px;border-radius:50%;background:${item.c};border:3px solid ${item.s}44;margin-bottom:9px"></div><h3>${item.name}</h3><div class="sm" style="margin-bottom:8px">${item.src==='road'?'🏆 Ruta':item.src==='shop'?`🛒 🪙${item.price}`:'🎁 Base'}</div><button class="${eq?'bs':owned?'bgreen':'bs'}" style="width:100%;font-size:12px" ${owned&&!eq?'':'disabled'} onclick="equipSkin('${item.id}')">${eq?'✓ Equipada':owned?'Equipar':'🔒'}</button></div>`;
+    return`<div class="ic" style="${eq?'border-color:rgba(0,212,255,.55)':''}"><div style="width:52px;height:52px;border-radius:50%;background:${item.c};border:3px solid ${item.s}44;margin-bottom:9px"></div><h3>${item.name}</h3><div class="sm" style="margin-bottom:8px">${item.src==='road'?'🏆 '+T('trophyRoad'):item.src==='shop'?`🛒 🪙${item.price}`:'🎁 Base'}</div><button class="${eq?'bs':owned?'bgreen':'bs'}" style="width:100%;font-size:12px" ${owned&&!eq?'':'disabled'} onclick="equipSkin('${item.id}')">${eq?T('equipped'):owned?T('equip'):T('notOwned')}</button></div>`;
   }).join('');
 }
 function renderRoad(){
   document.getElementById('passTrophies').textContent=save.trophies;
   document.getElementById('rewardTrack').innerHTML=ROAD.map((item,idx)=>{
     const unl=save.trophies>=item.t,clm=save.claimedRoad.includes(idx);
-    return`<div class="rc ${unl?'unl':''} ${clm?'clm':''} ${!unl?'lk':''}"><div class="ttag">🏆 ${item.t.toLocaleString()}</div><h3 style="font-size:12px;margin:7px 0 4px;font-family:var(--font)">${item.lbl}</h3><p style="font-size:11px;margin-bottom:9px">${rwLabel(item.rw)}</p><button class="${clm?'bs':unl?'bg':'bs'}" style="width:100%;font-size:11px" ${!unl||clm?'disabled':''} onclick="claimRoad(${idx})">${clm?'✓':'Reclamar'}</button></div>`;
+    return`<div class="rc ${unl?'unl':''} ${clm?'clm':''} ${!unl?'lk':''}"><div class="ttag">🏆 ${item.t.toLocaleString()}</div><h3 style="font-size:12px;margin:7px 0 4px;font-family:var(--font)">${item.lbl}</h3><p style="font-size:11px;margin-bottom:9px">${rwLabel(item.rw)}</p><button class="${clm?'bs':unl?'bg':'bs'}" style="width:100%;font-size:11px" ${!unl||clm?'disabled':''} onclick="claimRoad(${idx})">${clm?T('claimedBtn'):unl?T('claimBtn'):T('roadLocked')}</button></div>`;
   }).join('');
 }
 function renderSelectedPreview(){
@@ -1666,7 +1704,7 @@ function renderSelectedPreview(){
   document.getElementById('sSpd').textContent=cur.speed;
   document.getElementById('sRate').textContent=cur.fireRate.toFixed(2)+'s';
   const gd=gadgetDefs[save.selBrawler];const hasG=save.ownedGadgets.includes(save.selBrawler);
-  document.getElementById('selGadget').textContent=gd?(hasG?`🔧 ${gd.icon} ${gd.name}`:`🔧 ${gd.name} (🪙${gd.cost})`): '—';
+  document.getElementById('selGadget').textContent=gd?(hasG?`🔧 ${gd.icon} ${gd.name}`:`🔧 ${gd.name} (🪙${gd.cost})`):T('gadgetNone');
 }
 function renderAll(){
   syncRoad();
@@ -1719,7 +1757,7 @@ requestAnimationFrame(loop);
   <div class="card">
     <div class="stb">
       <div>
-        <h2>⭐ Starr Drops</h2>
+        <h2>⭐ <span data-t="starrDrops">Starr Drops</span></h2>
         <div class="sm" style="margin-top:4px">5% de probabilidad al ganar · Pueden contener brawlers exclusivos, skins y monedas</div>
       </div>
       <button class="bs closeScreenBtn" data-close="dropScreen">✕</button>
@@ -1754,7 +1792,7 @@ requestAnimationFrame(loop);
 <!-- RANKS SCREEN -->
 <div id="ranksScreen" class="screen">
   <div class="card">
-    <div class="stb"><h2>🏅 Rangos por Brawler</h2><button class="bs closeScreenBtn" data-close="ranksScreen">✕</button></div>
+    <div class="stb"><h2>🏅 <span data-t="ranks">Rangos por Brawler</span></h2><button class="bs closeScreenBtn" data-close="ranksScreen">✕</button></div>
     <p class="sm" style="margin-bottom:14px">Cada brawler tiene su propio contador de copas y rango. Las copas se ganan/pierden al usar ese brawler en partida.</p>
     <div class="g4" id="rankGrid"></div>
   </div>
@@ -1818,7 +1856,7 @@ Object.assign(gadgetDefs, {
   hex:  {name:'Hexágono Temporal', desc:'Congela a todos los enemigos en pantalla 1s', icon:'❄️', cost:1100, cooldown:18,
     action:(f)=>{ game.fighters.forEach(t=>{if(t.id!==f.id&&!t.dead)t.trapped=1.0;}); burst(f.x,f.y,'#9955ff',20); addFeedIf(f,'❄️ ¡Tiempo detenido!'); }},
   volt: {name:'Descarga Encadenada', desc:'Rayo que salta entre todos los enemigos visibles', icon:'⚡', cost:1150, cooldown:16,
-    action:(f)=>{ const targets=game.fighters.filter(t=>!t.dead&&t.id!==f.id&&dist(f.x,f.y,t.x,t.y)<400);targets.forEach(t=>{t.hp-=40;t.lastDamagedT=performance.now()/1000;burst(t.x,t.y,'#ffee00',10);spawnDmg(t.x,t.y,40,'#ffee00');if(t.hp<=0)defeatFighter(t,f);}); burst(f.x,f.y,'#ffee00',16); addFeedIf(f,`⚡ Descarga: ${targets.length} golpeados`); }},
+    action:(f)=>{ const targets=game.fighters.filter(t=>!t.dead&&t.id!==f.id&&dist(f.x,f.y,t.x,t.y)<400);targets.forEach(t=>{t.hp-=40;t.lastDamagedT=performance.now()/1000;burst(t.x,t.y,'#ffee00',10);spawnDmg(t.x,t.y,40,'#ffee00');if(t.hp<=0)defeatFighter(t,f);}); burst(f.x,f.y,'#ffee00',16); addFeedIf(f,currentLang==='en'?`⚡ Discharge: ${targets.length} hit`:`⚡ Descarga: ${targets.length} golpeados`); }},
   crypt:{name:'Paso Sombrío', desc:'Teletransporta a crypt detrás del enemigo más cercano', icon:'💀', cost:1050, cooldown:14,
     action:(f)=>{ const t=game.fighters.filter(e=>!e.dead&&e.id!==f.id).sort((a,b)=>dist(f.x,f.y,a.x,a.y)-dist(f.x,f.y,b.x,b.y))[0]; if(t){const a=Math.atan2(t.y-f.x,t.x-f.x)+Math.PI;f.x=clamp(t.x+Math.cos(a)*40,30,game.world.w-30);f.y=clamp(t.y+Math.sin(a)*40,30,game.world.h-30);burst(f.x,f.y,'#553366',14);addFeedIf(f,'💀 Paso Sombrío');} }},
   orb:  {name:'Lunas Explosivas', desc:'Lanza 3 proyectiles orbitales explosivos', icon:'🌙', cost:1200, cooldown:15,
@@ -1870,15 +1908,15 @@ function applyDropReward(reward){
     if(!save.ownedBrawlers.includes(bid))save.ownedBrawlers.push(bid);
     const cl=`${bid}_classic`;
     if(SD[cl]&&!save.ownedSkins.includes(cl)){save.ownedSkins.push(cl);save.selSkins[bid]=cl;}
-    return{icon:BD[bid]?.rarity==='legendary'?'👑':BD[bid]?.rarity==='mythic'?'🌸':'💜',name:`¡${BD[bid]?.name}!`,type:`Nuevo Brawler — ${BD[bid]?.role}`};
+    return{icon:BD[bid]?.rarity==='legendary'?'👑':BD[bid]?.rarity==='mythic'?'🌸':'💜',name:`${BD[bid]?.name}!`,type:`${T('dropWin')} — ${tRole(BD[bid]?.role)}`};
   }
   if(reward.type==='skin'){
     if(!save.ownedSkins.includes(reward.id))save.ownedSkins.push(reward.id);
     const b=SD[reward.id]?.b;if(b)save.selSkins[b]=reward.id;
-    return{icon:'🎨',name:`Skin ${SD[reward.id]?.name}`,type:`${BD[SD[reward.id]?.b]?.name} — Skin desbloqueada`};
+    return{icon:'🎨',name:`Skin ${SD[reward.id]?.name}`,type:`${BD[SD[reward.id]?.b]?.name} — ${T('dropSkin')}`};
   }
   save.coins+=reward.amt;
-  return{icon:'🪙',name:`${reward.amt} Monedas`,type:'Monedas añadidas a tu cuenta'};
+  return{icon:'🪙',name:`${reward.amt} ${T('coins')}`,type:T('dropCoins')};
 }
 function openStarrDrop(){
   if(save.starrDrops<=0)return;
@@ -1908,26 +1946,30 @@ window.openStarrDrop=openStarrDrop;
 
 // ─── RANK SYSTEM ───
 const RANKS=[
-  {name:'Bronce I',    cls:'rank-bronze',  t:0},
-  {name:'Bronce II',   cls:'rank-bronze',  t:15},
-  {name:'Bronce III',  cls:'rank-bronze',  t:30},
-  {name:'Plata I',     cls:'rank-silver',  t:50},
-  {name:'Plata II',    cls:'rank-silver',  t:75},
-  {name:'Plata III',   cls:'rank-silver',  t:100},
-  {name:'Oro I',       cls:'rank-gold',    t:130},
-  {name:'Oro II',      cls:'rank-gold',    t:175},
-  {name:'Oro III',     cls:'rank-gold',    t:230},
-  {name:'Diamante I',  cls:'rank-diamond', t:295},
-  {name:'Diamante II', cls:'rank-diamond', t:375},
-  {name:'Diamante III',cls:'rank-diamond', t:470},
-  {name:'Mítico I',    cls:'rank-mythic',  t:580},
-  {name:'Mítico II',   cls:'rank-mythic',  t:710},
-  {name:'Mítico III',  cls:'rank-mythic',  t:860},
-  {name:'Legendario I',cls:'rank-legendary',t:1030},
-  {name:'Legendario II',cls:'rank-legendary',t:1230},
-  {name:'Legendario III',cls:'rank-legendary',t:1460},
-  {name:'Maestros',    cls:'rank-masters', t:1720},
+  {name:'Bronce I',    nameKey:'bronzeI',   cls:'rank-bronze',  t:0},
+  {name:'Bronce II',   nameKey:'bronzeII',  cls:'rank-bronze',  t:15},
+  {name:'Bronce III',  nameKey:'bronzeIII', cls:'rank-bronze',  t:30},
+  {name:'Plata I',     nameKey:'silverI',   cls:'rank-silver',  t:50},
+  {name:'Plata II',    nameKey:'silverII',  cls:'rank-silver',  t:75},
+  {name:'Plata III',   nameKey:'silverIII', cls:'rank-silver',  t:100},
+  {name:'Oro I',       nameKey:'goldI',     cls:'rank-gold',    t:130},
+  {name:'Oro II',      nameKey:'goldII',    cls:'rank-gold',    t:175},
+  {name:'Oro III',     nameKey:'goldIII',   cls:'rank-gold',    t:230},
+  {name:'Diamante I',  nameKey:'diamondI',  cls:'rank-diamond', t:295},
+  {name:'Diamante II', nameKey:'diamondII', cls:'rank-diamond', t:375},
+  {name:'Diamante III',nameKey:'diamondIII',cls:'rank-diamond', t:470},
+  {name:'Mítico I',    nameKey:'mythicI',   cls:'rank-mythic',  t:580},
+  {name:'Mítico II',   nameKey:'mythicII',  cls:'rank-mythic',  t:710},
+  {name:'Mítico III',  nameKey:'mythicIII', cls:'rank-mythic',  t:860},
+  {name:'Legendario I',nameKey:'legendI',   cls:'rank-legendary',t:1030},
+  {name:'Legendario II',nameKey:'legendII', cls:'rank-legendary',t:1230},
+  {name:'Legendario III',nameKey:'legendIII',cls:'rank-legendary',t:1460},
+  {name:'Maestros',      nameKey:'masters',     cls:'rank-masters',     t:1720},
+  {name:'Gran Maestro',  nameKey:'grandMaster', cls:'rank-grandmaster', t:2000},
+  {name:'Semidiós',      nameKey:'demigod',     cls:'rank-demigod',     t:4000},
+  {name:'Dios',          nameKey:'god',         cls:'rank-god',         t:6500},
 ];
+function getRankName(rk){return T(rk.nameKey)||rk.name;}
 function getRank(trophies){
   let r=RANKS[0];for(const rk of RANKS){if(trophies>=rk.t)r=rk;else break;}return r;
 }
@@ -1947,12 +1989,12 @@ function renderRankGrid(){
         <div style="width:40px;height:40px;border-radius:50%;background:${sk.c};border:2px solid ${sk.s}44;flex-shrink:0"></div>
         <div>
           <div style="font-family:var(--font);font-weight:700;font-size:13px">${bd.name}</div>
-          <span class="rank-badge ${rank.cls}">${rank.name}</span>
+          <span class="rank-badge ${rank.cls}">${getRankName(rank)}</span>
         </div>
       </div>
       <div style="font-size:22px;font-family:var(--font);font-weight:900;color:${fillCol}">${t} 🏆</div>
       <div class="rank-progress-wrap">
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted)">${next?`→ ${next.name} (${next.t})`:'🏆 Máximo'}</div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted)">${next?`${T('nextRank')} ${getRankName(next)} (${next.t})`:T('maxRank')}</div>
         <div class="rank-progress"><div class="rank-progress-fill" style="width:${pct}%;background:${fillCol}"></div></div>
       </div>
     </div>`;
@@ -1979,7 +2021,7 @@ renderBrawlers=function(){
         const badge=document.createElement('span');
         badge.className=`rank-badge ${rank.cls}`;
         badge.style.cssText='position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9px;z-index:2';
-        badge.textContent=rank.name;
+        badge.textContent=getRankName(rank);
         canvas.parentElement.appendChild(badge);
       }
     }
@@ -2275,16 +2317,16 @@ function renderDropGrid(){
     const filled=i<n;
     html+=`<div class="drop-card ${filled?'':'drop-empty'}" onclick="${filled?`openStarrDrop()`:''}">
       <span class="drop-icon">${filled?'⭐':'○'}</span>
-      <div class="drop-label">${filled?'Abrir':'—'}</div>
+      <div class="drop-label">${filled?T('openDrop'):'—'}</div>
     </div>`;
   }
-  if(n>slots)html+=`<div class="drop-info" style="grid-column:1/-1">+ ${n-slots} drops más almacenados</div>`;
+  if(n>slots)html+=`<div class="drop-info" style="grid-column:1/-1">+ ${n-slots} ${currentLang==='en'?'more stored drops':'drops más almacenados'}</div>`;
   grid.innerHTML=html;
-  document.getElementById('dropInfo').innerHTML=`<strong style="color:var(--accent2)">${n} Starr Drop${n!==1?'s':''} disponible${n!==1?'s':''}</strong>
-    ${n>0?'· ¡Haz click en una estrella para abrirlo!':''}
-    <br>Gana partidas para conseguir más (5% por victoria). Los drops pueden contener:
-    <strong style="color:#6ed572">monedas</strong>, <strong style="color:#c084fc">skins</strong> y los brawlers exclusivos
-    <strong style="color:#ff9a00">Prism · Wraith · Rex-D · Kira</strong>.`;
+  const clickHint=n>0?(currentLang==='en'?'· Click a star to open!':'· ¡Haz click en una estrella para abrirlo!'):'';
+  const earnHint=currentLang==='en'
+    ?`Win matches to earn more. Drops can contain: <strong style="color:#6ed572">coins</strong>, <strong style="color:#c084fc">skins</strong> and exclusive brawlers <strong style="color:#ff9a00">Prism · Wraith · Rex-D · Kira · Orb · Shade</strong>.`
+    :`Gana partidas para conseguir más. Los drops pueden contener: <strong style="color:#6ed572">monedas</strong>, <strong style="color:#c084fc">skins</strong> y los brawlers exclusivos <strong style="color:#ff9a00">Prism · Wraith · Rex-D · Kira · Orb · Shade</strong>.`;
+  document.getElementById('dropInfo').innerHTML=`<strong style="color:var(--accent2)">${n} ${T('starrDrops')} ${currentLang==='en'?'available':'disponible${n!==1?"s":""}'}</strong> ${clickHint}<br>${earnHint}`;
 }
 
 // init new save fields
@@ -2298,7 +2340,7 @@ persist();updateDropCounter();
   <div class="card">
     <div class="stb">
       <div>
-        <h2>⬆️ Mejoras de Brawler</h2>
+        <h2>⬆️ <span data-t="upgrades">Mejoras de Brawler</span></h2>
         <div class="sm" style="margin-top:4px">Mejora las estadísticas de tus brawlers con monedas. Máximo nivel 10.</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
@@ -2354,7 +2396,7 @@ function renderUpgradeGrid(){
       </div>
       ${nextBonus&&lv<10?`<div class="sm" style="color:var(--good);margin-bottom:8px">→ ❤️${Math.round(bd.hp*nextBonus.hp)} ⚔️${Math.round(bd.damage*nextBonus.dmg)} ⚡${Math.round(bd.speed*nextBonus.spd)}</div>`:''}
       <button class="${lv>=10?'bs':'bp'}" style="width:100%;font-size:12px" ${(lv>=10||!cost||save.coins<cost)?'disabled':''} onclick="upgradeBrawler('${bid}')">
-        ${lv>=10?'✓ NIVEL MAX':`⬆️ Mejorar · 🪙${cost}`}
+        ${lv>=10?T('levelMax'):`${T('upgradeBtn')} · 🪙${cost}`}
       </button>
     </div>`;
   }).join('');
@@ -2363,7 +2405,7 @@ window.upgradeBrawler=function(bid){
   if(!save.brawlerLevels)save.brawlerLevels={};
   const lv=getBrawlerLevel(bid),cost=getUpgradeCost(bid);
   if(!cost||lv>=10)return;
-  if(save.coins<cost){alert(`Necesitas 🪙${cost}. Tienes 🪙${save.coins}.`);return;}
+  if(save.coins<cost){alert(currentLang==='en'?`Need 🪙${cost}. You have 🪙${save.coins}.`:`Necesitas 🪙${cost}. Tienes 🪙${save.coins}.`);return;}
   save.coins-=cost;save.brawlerLevels[bid]=(lv+1);persist();renderUpgradeGrid();renderAll();
 };
 
@@ -2391,11 +2433,10 @@ renderSelectedPreview=function(){
   if(existing){
     const lvDiv=document.getElementById('selLevel');
     if(!lvDiv){
-      const d=document.createElement('div');d.id='selLevel';d.style.cssText='font-size:12px;font-weight:900;margin-top:4px';
-      d.innerHTML=`⬆️ Nivel: <span style="color:${ll.col}">${ll.txt}</span>`;
+      d.innerHTML=`⬆️ ${currentLang==='en'?'Level':'Nivel'}: <span style="color:${ll.col}">${ll.txt}</span>`;
       existing.parentNode.insertBefore(d,existing.nextSibling);
     }else{
-      lvDiv.innerHTML=`⬆️ Nivel: <span style="color:${ll.col}">${ll.txt}</span>`;
+      lvDiv.innerHTML=`⬆️ ${currentLang==='en'?'Level':'Nivel'}: <span style="color:${ll.col}">${ll.txt}</span>`;
     }
   }
 };
@@ -2467,18 +2508,62 @@ const LANGS={
     unmute:'Activar', controls:'Controles', resetControls:'Restablecer por defecto',
     pressKey:'Pulsa una tecla...', play:'JUGAR', brawlers:'Brawlers',
     skins:'Skins', trophyRoad:'Ruta de Copas', shop:'Tienda',
-    ranks:'Rangos de Brawler', upgrades:'Mejoras de Brawler',
+    ranks:'Rangos por Brawler', upgrades:'Mejoras de Brawler',
+    starrDrops:'Starr Drops',
     wins:'Victorias', matches:'Partidas', kills:'Kills', damage:'Daño',
-    pauseTitle:'PAUSA', resume:'Reanudar', leaveMatch:'Salir al menú',
-    victory:'¡VICTORIA!', position:'Posición', trophies:'Copas',
-    coins:'Monedas', newRewards:'Nuevas recompensas',
-    superReady:'¡Súper activado!', gadgetReady:'¡Listo!', gadgetNone:'No comprado',
+    trophies:'Copas', coins:'Monedas',
+    pauseTitle:'PAUSA', resume:'▶ Reanudar', leaveMatch:'🏠 Salir al menú',
+    victory:'¡VICTORIA!', playAgain:'⚔️ Jugar de nuevo', menu:'🏠 Menú',
+    newRewards:'Nuevas recompensas',
+    shopSkins:'Skins de tienda', shopOwned:'Mis skins',
+    // brawler screen
+    unlock:'Seleccionar', active:'✓ Activo', locked:'🔒 Bloqueado',
+    starrExclusive:'⭐ Starr Drop exclusivo', totalCups:'copas totales',
+    buyGadget:'🛒', gadgetOwned:'✓ Gadget',
+    // shop
+    bought:'✓ Comprada', needsBrawler:'Requiere brawler', available:'Disponible',
+    buy:'Comprar', equip:'Equipar', equipped:'✓ Equipada', notOwned:'🔒 Bloqueada',
+    // upgrades
+    upgradeBtn:'⬆️ Mejorar', levelMax:'✓ NIVEL MAX',
+    // ranks
+    ranksDesc:'Cada brawler tiene su propio contador de copas y rango.',
+    nextRank:'→', maxRank:'🏆 Máximo',
+    // trophy road
+    claimBtn:'Reclamar', claimedBtn:'✓', roadLocked:'🔒',
+    // starr drop
+    openDrop:'Abrir', dropWin:'¡Nuevo Brawler', dropSkin:'Skin desbloqueada', dropCoins:'Monedas añadidas',
+    noDrops:'No hay drops disponibles',
+    // result
+    positionText:'Posición',
+    // HUD
+    superLabel:'⚡ SÚPER', gadgetLabel:'🔧 GADGET', gadgetReady:'¡Listo!', gadgetNone:'No comprado',
     moveHint:'mover', shootHint:'disparar', superHint:'súper',
     gadgetHint:'gadget', pauseHint:'pausa',
     actionUp:'Mover arriba', actionDown:'Mover abajo',
     actionLeft:'Mover izquierda', actionRight:'Mover derecha',
     actionSuper:'Súper', actionGadget:'Gadget',
-    keybindTitle:'Controles',
+    // roles
+    roleHybrid:'Híbrido', roleTank:'Tanque', roleAssassin:'Asesino',
+    roleControl:'Control', roleSniper:'Tirador', roleMythic:'Mítico',
+    roleMech:'Mech', roleSwordsman:'Espadachín', roleCosmic:'Cósmico',
+    roleReaper:'Segador', roleArcanist:'Hechicero', roleElectrician:'Electricista',
+    roleShadow:'Sombrío', rolePyro:'Piromante',
+    closeBtn:'✕',
+    upgradeCoinsLabel:'🪙',
+    upgradeSubtitle:'Mejora las estadísticas de tus brawlers con monedas. Máximo nivel 10.',
+    ranksSubtitle:'Cada brawler tiene su propio contador de copas. Las copas cambian según el brawler que uses.',
+    dropSubtitle:'Gana partidas para conseguir Starr Drops.',
+    skinLabel:'🎨', gadgetInfo:'CD:',
+    bronzeI:'Bronce I',bronzeII:'Bronce II',bronzeIII:'Bronce III',
+    silverI:'Plata I',silverII:'Plata II',silverIII:'Plata III',
+    goldI:'Oro I',goldII:'Oro II',goldIII:'Oro III',
+    diamondI:'Diamante I',diamondII:'Diamante II',diamondIII:'Diamante III',
+    mythicI:'Mítico I',mythicII:'Mítico II',mythicIII:'Mítico III',
+    legendI:'Legendario I',legendII:'Legendario II',legendIII:'Legendario III',
+    masters:'Maestros',
+    grandMaster:'Gran Maestro',
+    demigod:'Semidiós',
+    god:'Dios',
   },
   en:{
     settings:'Settings', language:'Language', volume:'Volume', mute:'Mute',
@@ -2486,51 +2571,137 @@ const LANGS={
     pressKey:'Press a key...', play:'PLAY', brawlers:'Brawlers',
     skins:'Skins', trophyRoad:'Trophy Road', shop:'Shop',
     ranks:'Brawler Ranks', upgrades:'Brawler Upgrades',
+    starrDrops:'Starr Drops',
     wins:'Wins', matches:'Matches', kills:'Kills', damage:'Damage',
-    pauseTitle:'PAUSED', resume:'Resume', leaveMatch:'Leave match',
-    victory:'VICTORY!', position:'Position', trophies:'Trophies',
-    coins:'Coins', newRewards:'New rewards',
-    superReady:'Super activated!', gadgetReady:'Ready!', gadgetNone:'Not bought',
+    trophies:'Trophies', coins:'Coins',
+    pauseTitle:'PAUSED', resume:'▶ Resume', leaveMatch:'🏠 Leave match',
+    victory:'VICTORY!', playAgain:'⚔️ Play again', menu:'🏠 Menu',
+    newRewards:'New rewards',
+    shopSkins:'Shop skins', shopOwned:'My skins',
+    unlock:'Select', active:'✓ Active', locked:'🔒 Locked',
+    starrExclusive:'⭐ Starr Drop exclusive', totalCups:'trophies needed',
+    buyGadget:'🛒', gadgetOwned:'✓ Gadget',
+    bought:'✓ Owned', needsBrawler:'Requires brawler', available:'Available',
+    buy:'Buy', equip:'Equip', equipped:'✓ Equipped', notOwned:'🔒 Locked',
+    upgradeBtn:'⬆️ Upgrade', levelMax:'✓ MAX LEVEL',
+    ranksDesc:'Each brawler has its own trophy count and rank.',
+    nextRank:'→', maxRank:'🏆 Max',
+    claimBtn:'Claim', claimedBtn:'✓', roadLocked:'🔒',
+    openDrop:'Open', dropWin:'New Brawler!', dropSkin:'Skin unlocked', dropCoins:'Coins added',
+    noDrops:'No drops available',
+    positionText:'Position',
+    superLabel:'⚡ SUPER', gadgetLabel:'🔧 GADGET', gadgetReady:'Ready!', gadgetNone:'Not purchased',
     moveHint:'move', shootHint:'shoot', superHint:'super',
     gadgetHint:'gadget', pauseHint:'pause',
     actionUp:'Move up', actionDown:'Move down',
     actionLeft:'Move left', actionRight:'Move right',
     actionSuper:'Super', actionGadget:'Gadget',
-    keybindTitle:'Controls',
+    roleHybrid:'Hybrid', roleTank:'Tank', roleAssassin:'Assassin',
+    roleControl:'Control', roleSniper:'Sniper', roleMythic:'Mystic',
+    roleMech:'Mech', roleSwordsman:'Swordsman', roleCosmic:'Cosmic',
+    roleReaper:'Reaper', roleArcanist:'Arcanist', roleElectrician:'Electrician',
+    roleShadow:'Shadow', rolePyro:'Pyromancer',
+    closeBtn:'✕',
+    upgradeCoinsLabel:'🪙',
+    upgradeSubtitle:'Upgrade your brawlers\' stats with coins. Maximum level 10.',
+    ranksSubtitle:'Each brawler has its own trophy counter. Trophies change based on the brawler you use.',
+    dropSubtitle:'Win matches to earn Starr Drops.',
+    skinLabel:'🎨', gadgetInfo:'CD:',
+    bronzeI:'Bronze I',bronzeII:'Bronze II',bronzeIII:'Bronze III',
+    silverI:'Silver I',silverII:'Silver II',silverIII:'Silver III',
+    goldI:'Gold I',goldII:'Gold II',goldIII:'Gold III',
+    diamondI:'Diamond I',diamondII:'Diamond II',diamondIII:'Diamond III',
+    mythicI:'Mythic I',mythicII:'Mythic II',mythicIII:'Mythic III',
+    legendI:'Legendary I',legendII:'Legendary II',legendIII:'Legendary III',
+    masters:'Masters',
+    grandMaster:'Grand Master',
+    demigod:'Demigod',
+    god:'God',
   }
 };
 let currentLang=save.lang||'es';
 function T(key){return(LANGS[currentLang]||LANGS.es)[key]||key;}
+
+// Translate brawler roles
+function tRole(role){
+  const map={
+    'Híbrido':'roleHybrid','Tanque':'roleTank','Asesino':'roleAssassin',
+    'Control':'roleControl','Tirador':'roleSniper','Cósmico':'roleCosmic',
+    'Fantasma':'roleMythic','Mech':'roleMech','Espadachín':'roleSwordsman',
+    'Segador':'roleReaper','Hechicero':'roleArcanist','Electricista':'roleElectrician',
+    'Sombrío':'roleShadow','Piromante':'rolePyro','Francotirador':'roleSniper',
+    'Asalto':'roleControl',
+    // English reverse
+    'Hybrid':'roleHybrid','Tank':'roleTank','Assassin':'roleAssassin',
+    'Sniper':'roleSniper','Cosmic':'roleCosmic','Ghost':'roleMythic',
+    'Swordsman':'roleSwordsman','Reaper':'roleReaper','Arcanist':'roleArcanist',
+    'Electrician':'roleElectrician','Shadow':'roleShadow','Pyromancer':'rolePyro',
+  };
+  return T(map[role]||'roleHybrid')||role;
+}
+
 function applyLang(){
+  // Static data-t elements
   document.querySelectorAll('[data-t]').forEach(el=>{
-    const k=el.dataset.t;if(LANGS[currentLang][k])el.textContent=LANGS[currentLang][k];
+    const k=el.dataset.t;const v=LANGS[currentLang]?.[k];
+    if(v&&el.tagName!=='BUTTON')el.textContent=v;
+    else if(v&&el.tagName==='BUTTON'){
+      // Keep emoji prefix if present
+      el.textContent=v;
+    }
   });
-  // update dynamic elements
+  // Language buttons
   document.getElementById('langEs').className=currentLang==='es'?'bp':'bs';
-  document.getElementById('langEs').style.flex='1';document.getElementById('langEs').style.padding='12px';
+  document.getElementById('langEs').style.cssText='flex:1;padding:12px';
   document.getElementById('langEn').className=currentLang==='en'?'bp':'bs';
-  document.getElementById('langEn').style.flex='1';document.getElementById('langEn').style.padding='12px';
-  // play button
-  const pb=document.getElementById('playBtn');if(pb)pb.childNodes[pb.childNodes.length-1].textContent=' '+T('play');
-  // nav buttons
-  const navMap={openBrawlersBtn:'👾 '+T('brawlers'),openCustomBtn:'🎨 '+T('skins'),
-    openPassBtn:'🏆 '+T('trophyRoad'),openShopBtn:'🛒 '+T('shop'),
-    openRanksBtn:'🏅 '+T('ranks'),openUpgradeBtn:'⬆️ '+T('upgrades')};
+  document.getElementById('langEn').style.cssText='flex:1;padding:12px';
+  // Nav buttons
+  const navMap={
+    openBrawlersBtn:`👾 ${T('brawlers')}`,
+    openCustomBtn:`🎨 ${T('skins')}`,
+    openPassBtn:`🏆 ${T('trophyRoad')}`,
+    openShopBtn:`🛒 ${T('shop')}`,
+    openRanksBtn:`🏅 ${T('ranks')}`,
+    openUpgradeBtn:`⬆️ ${T('upgrades')}`,
+  };
   Object.entries(navMap).forEach(([id,txt])=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
-  // stats bar labels
-  const statMap={mWins:T('wins'),mMatches:T('matches'),mKills:T('kills'),mDamage:T('damage')};
-  document.querySelectorAll('.sbdg').forEach(el=>{
-    const strong=el.querySelector('strong');const id=strong?.id;
-    if(id&&statMap[id])el.childNodes[0].textContent=statMap[id];
+  // Play button
+  const pb=document.getElementById('playBtn');if(pb)pb.textContent=`⚔️ ${T('play')}`;
+  // Stats bar labels
+  const sbdgs=document.querySelectorAll('.sbdg');
+  const statKeys=['wins','matches','kills','damage'];
+  const statIds=['mWins','mMatches','mKills','mDamage'];
+  sbdgs.forEach((el,i)=>{
+    const strong=el.querySelector('strong');
+    if(strong&&statKeys[i])el.childNodes[0].textContent=T(statKeys[i]);
   });
-  // controls hint
+  // Controls hint
   const ctip=document.querySelector('.ctip');
-  if(ctip)ctip.innerHTML=`<span class="key">WASD</span> ${T('moveHint')} · <span class="key">Click</span> ${T('shootHint')} · <span class="key">${getKeyLabel('super')}</span> ${T('superHint')} · <span class="key">${getKeyLabel('gadget')}</span> ${T('gadgetHint')} · <span class="key">Esc</span> ${T('pauseHint')}`;
-  // pause screen
-  const pt=document.querySelector('.pc h2');if(pt)pt.textContent='⏸ '+T('pauseTitle');
-  const rb=document.getElementById('resumeBtn');if(rb)rb.textContent='▶ '+T('resume');
-  const lb=document.getElementById('leaveBtn');if(lb)lb.textContent='🏠 '+T('leaveMatch');
+  if(ctip)ctip.innerHTML=`<span class="key">WASD</span> ${T('moveHint')} · <span class="key">Click</span> ${T('shootHint')} · <span class="key">${getKeyLabel('super').toUpperCase()}</span> ${T('superHint')} · <span class="key">${getKeyLabel('gadget').toUpperCase()}</span> ${T('gadgetHint')} · <span class="key">Esc</span> ${T('pauseHint')}`;
+  // HUD labels
+  const hl=document.querySelectorAll('.hl');
+  if(hl[1])hl[1].innerHTML=`${T('superLabel')} <span id="supPct">0%</span>`;
+  if(hl[2])hl[2].innerHTML=`${T('gadgetLabel')} <span id="gadLabel">—</span>`;
+  // Shop tabs
+  const tabs=document.querySelectorAll('[data-t="shopSkins"],[data-t="shopOwned"]');
+  tabs.forEach(t=>{if(t.dataset.t)t.textContent=T(t.dataset.t);});
+  // Upgrade screen subtitle
+  const usub=document.querySelector('#upgradeScreen .stb+p, #upgradeScreen .sm');
+  if(usub)usub.textContent=T('upgradeSubtitle');
+  // Ranks subtitle
+  const rsub=document.querySelector('#ranksScreen p.sm');
+  if(rsub)rsub.textContent=T('ranksSubtitle');
+  // Starr drop subtitle
+  const dtext=document.querySelector('#dropScreen .sm');
+  if(dtext)dtext.textContent=T('dropSubtitle');
+  // Re-render dynamic screens to pick up translated strings
+  renderBrawlers();
+  renderShop();
+  if(typeof renderUpgradeGrid==='function')renderUpgradeGrid();
+  if(typeof renderRankGrid==='function')renderRankGrid();
+  renderRoad();
   renderKeybindGrid();
+  renderSelectedPreview();
 }
 window.setLang=function(lang){currentLang=lang;save.lang=lang;persist();applyLang();};
 
