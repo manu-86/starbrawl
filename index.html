@@ -878,7 +878,7 @@ function createWalls(){
       }else if(ch==='X'){
         const clear=[[-1,0],[1,0],[0,-1],[0,1],[0,0]].every(([dc,dr])=>!occupied.has(key(c+dc,r+dr)));
         if(clear){
-          game.boxes.push({x:px+38,y:py+38,w:44,h:44,hp:80,maxHp:80});
+          game.boxes.push({x:px+38,y:py+38,w:44,h:44,hp:150,maxHp:150});
           occupied.add(key(c,r));
         }
       }
