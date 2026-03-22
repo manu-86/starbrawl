@@ -1483,15 +1483,52 @@ function updateAI(bot,dt,now){
     moveCircle(bot,Math.cos(a)*bot.speed*dt,Math.sin(a)*bot.speed*dt);
     botShootNearest(bot);applyRegen(bot,dt,now);return;
   }
+
   const hpPct=bot.hp/bot.maxHp;
   const personality=bot.botType||{style:'balanced',engageRange:1.0,retreatHp:0.30,boxHunter:false};
   const retreatThreshold=personality.retreatHp;
   const engageMul=personality.engageRange;
 
-  // Pickup seek — any type, keep attacking while going for it
+  // ── Per-brawler preferred engagement range ──
+  // Based on attack type and brawler role, more granular than before
+  const rangeTable={
+    shotgun: {min:60,  max:160, retreat:200}, // atlas — right in their face
+    sniper:  {min:320, max:520, retreat:180}, // lynx — far back
+    laser:   {min:260, max:440, retreat:200}, // glitch/crypt — mid-long
+    burst:   {min:100, max:260, retreat:180}, // viper — close-medium
+    explosive:{min:130,max:300, retreat:220}, // ember/blaze — medium, kite back
+    charge:  {min:90,  max:220, retreat:200}, // surge — medium-close
+    blade:   {min:50,  max:140, retreat:160}, // kira — very close
+    triple:  {min:80,  max:200, retreat:180}, // rex_d — close-medium
+    bounce:  {min:120, max:280, retreat:200}, // prism — medium
+    ghost:   {min:200, max:380, retreat:200}, // wraith — medium
+    hex:     {min:150, max:320, retreat:200}, // hex — medium
+    chain:   {min:120, max:280, retreat:200}, // volt — medium
+    single:  {min:120, max:280, retreat:200}, // nova/orb — medium
+  };
+  const rng=rangeTable[bot.atkType]||rangeTable.single;
+  const pMin=rng.min*engageMul;
+  const pMax=rng.max*engageMul;
+  const pRetreat=rng.retreat;
+
+  // ── Aggression modifier per brawler role ──
+  // Tanques y cuerpo a cuerpo buscan distancia corta, snipers se quedan lejos
+  const roleAggression={
+    'Tanque':1.3,'Asesino':1.2,'Espadachín':1.25,'Mech':1.1,
+    'Híbrido':1.0,'Control':0.95,'Asalto':1.05,'Piromante':0.9,
+    'Tirador':0.8,'Hechicero':0.85,'Electricista':0.9,
+    'Francotirador':0.7,'Cósmico':0.85,'Fantasma':0.9,'Sombrío':0.85,'Segador':0.95,
+  };
+  const role=BD[bot.bid]?.role||'Híbrido';
+  const aggrMul=roleAggression[role]||1.0;
+
+  // ── Is the bot being shot at right now? ──
+  const beingAttacked=now-bot.lastDamagedT<1.2;
+
+  // Pickup seek — heal/charge, keep attacking while going for it
   const wantsHeal=hpPct<(0.65*engageMul);
   const wantsCharge=bot.supCharge<bot.supMax*.4;
-  const wantsPower=bot.powerLevel<4&&personality.boxHunter;
+  const wantsPower=bot.powerLevel<4&&personality.boxHunter&&!beingAttacked; // stop if being shot
   if(wantsHeal||wantsCharge||wantsPower){
     const pi=closestPickup(bot,wantsHeal);
     if(pi.pk&&pi.dist<320){
@@ -1503,22 +1540,31 @@ function updateAI(bot,dt,now){
       }
     }
   }
-  // Box farming — early game only
+
+  // Box farming — early game only, AND only if not being attacked
   const bi=closestBox(bot);
-  if(bi.box&&bi.dist<180&&bot.powerLevel<3&&aliveCount()>4){
+  if(bi.box&&bi.dist<180&&bot.powerLevel<3&&aliveCount()>4&&!beingAttacked){
     const tx=bi.box.x+22,ty=bi.box.y+22,a=Math.atan2(ty-bot.y,tx-bot.x),d=dist(bot.x,bot.y,tx,ty);
     bot.facing=a;
     if(d>60)moveCircle(bot,Math.cos(a)*bot.speed*dt,Math.sin(a)*bot.speed*dt);
     else if(bot.shootCD<=0){triggerAttack(bot,a+(Math.random()-.5)*bot.aimSpread);bot.shootCD=bot.fireRate+rand(.06,.14);}
     botShootNearest(bot);applyRegen(bot,dt,now);return;
   }
-  // Targeting — re-target faster if target is hidden
+
+  // Targeting
   const curTarget=game.fighters.find(f=>f.id===bot.targetId&&!f.dead);
   const canSeeTarget=curTarget&&hasLOS(bot.x,bot.y,curTarget.x,curTarget.y)&&!hiddenFrom(bot,curTarget);
   if(bot.aiRetarget<=0||!curTarget||(!canSeeTarget&&bot.aiRetarget<0.4)){
-    const t=closestThreat(bot);bot.targetId=t?t.id:null;
+    // If being attacked, prioritise the attacker
+    let t=null;
+    if(beingAttacked&&bot.recentFrom){
+      t=game.fighters.find(f=>f.id===bot.recentFrom&&!f.dead);
+    }
+    if(!t)t=closestThreat(bot);
+    bot.targetId=t?t.id:null;
     bot.aiRetarget=rand(.15,.35)*bot.reactionT;
   }
+
   const target=game.fighters.find(f=>f.id===bot.targetId&&!f.dead);
   let mx=0,my=0;
   if(target){
@@ -1527,22 +1573,36 @@ function updateAI(bot,dt,now){
     bot.facing=a;
     const vis=hasLOS(bot.x,bot.y,target.x,target.y)&&!hiddenFrom(bot,target);
     if(vis){
-      // Preferred engagement range by brawler type + personality
-      const pMin=(bot.atkType==='shotgun'?80:bot.atkType==='laser'||bot.atkType==='sniper'?240:130)*engageMul;
-      const pMax=(bot.atkType==='shotgun'?190:bot.atkType==='laser'||bot.atkType==='sniper'?420:310)*engageMul;
-      if(d>pMax){mx=Math.cos(a);my=Math.sin(a);}
-      else if(d<pMin){mx=-Math.cos(a);my=-Math.sin(a);}
-      else{const sd=Math.sin(bot.id.charCodeAt(3)+now*.8)>0?1:-1;mx=Math.cos(a+Math.PI/2*sd);my=Math.sin(a+Math.PI/2*sd);}
+      // Retreat if HP critical — distance proportional to role aggression
+      if(hpPct<retreatThreshold){
+        mx=-Math.cos(a)*aggrMul;my=-Math.sin(a)*aggrMul;
+        // Still shoot while retreating
+        if(bot.shootCD<=0){triggerAttack(bot,a+(Math.random()-.5)*bot.aimSpread);bot.shootCD=bot.fireRate+rand(.1,.22);}
+      }else if(d>pMax*aggrMul){
+        // Too far — close in (aggressive brawlers close faster)
+        mx=Math.cos(a)*aggrMul;my=Math.sin(a)*aggrMul;
+      }else if(d<pMin/aggrMul){
+        // Too close — back off (less for aggressive brawlers)
+        mx=-Math.cos(a)/aggrMul;my=-Math.sin(a)/aggrMul;
+      }else{
+        // In ideal range — strafe perpendicularly
+        const sd=Math.sin(bot.id.charCodeAt(3)+now*.8)>0?1:-1;
+        mx=Math.cos(a+Math.PI/2*sd);my=Math.sin(a+Math.PI/2*sd);
+        // Aggressive brawlers also creep forward while strafing
+        if(aggrMul>1.1){mx+=Math.cos(a)*0.3;my+=Math.sin(a)*0.3;}
+      }
+      // Shoot
       if(bot.shootCD<=0){triggerAttack(bot,a+(Math.random()-.5)*bot.aimSpread);bot.shootCD=bot.fireRate+rand(.05,.16);}
-      if(bot.supCharge>=bot.supMax&&d<320)fireSuper(bot,true);
+      // Use super when in good range
+      const superRange=pMax*(1.1+aggrMul*.2);
+      if(bot.supCharge>=bot.supMax&&d<superRange)fireSuper(bot,true);
+      // Unstuck
       if(bot.stuckTime>1.0){const sd=Math.random()>.5?1:-1;mx=Math.cos(a+Math.PI/2*sd);my=Math.sin(a+Math.PI/2*sd);bot.stuckTime=0;}
     }else{
-      // Target hidden — move toward last known pos and unstuck
       mx=Math.cos(a);my=Math.sin(a);
       if(bot.stuckTime>0.8){bot.wanderAngle=rand(0,Math.PI*2);mx=Math.cos(bot.wanderAngle);my=Math.sin(bot.wanderAngle);bot.stuckTime=0;bot.aiRetarget=.1;}
     }
   }else{
-    // No target — wander toward nearby fighters 40% of time
     if(bot.wanderTime<=0){
       const others=game.fighters.filter(f=>!f.dead&&f.id!==bot.id);
       if(others.length&&Math.random()<.4){
