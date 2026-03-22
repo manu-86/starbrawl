@@ -420,21 +420,18 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
     <div class="stb"><h2>🛒 <span data-t="shop">Tienda</span> &nbsp;<span style="font-size:.7em;color:var(--accent2)">🪙 <span id="shopCoins">0</span></span></h2><button class="bs closeScreenBtn" data-close="shopScreen">✕</button></div>
     <div class="tbbar">
       <button class="tb active" data-tab="shopRotating">⭐ Ofertas del día</button>
-      <button class="tb" data-tab="shopSkins" data-t="shopSkins">Todas las skins</button>
       <button class="tb" data-tab="shopOwned" data-t="shopOwned">Mis skins</button>
     </div>
-    <!-- Rotating daily shop -->
     <div id="tab-shopRotating" class="tc">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:rgba(255,215,106,.06);border:1px solid rgba(255,215,106,.2);border-radius:12px">
         <span style="font-size:22px">🔄</span>
         <div>
           <div style="font-family:var(--font);font-weight:700;font-size:13px;color:var(--accent2)">Oferta diaria — rota automáticamente</div>
-          <div class="sm">Renueva en: <strong id="shopTimer" style="color:var(--accent)">--:--:--</strong> &nbsp;·&nbsp; Descuento especial en skins no desbloqueadas</div>
+          <div class="sm">Renueva en: <strong id="shopTimer" style="color:var(--accent)">--:--:--</strong></div>
         </div>
       </div>
       <div class="g4" id="shopRotatingGrid"></div>
     </div>
-    <div id="tab-shopSkins" class="tc hidden g4"></div>
     <div id="tab-shopOwned" class="tc hidden g4"></div>
   </div>
 </div>
@@ -1954,29 +1951,24 @@ window.buySkin=id=>{
 };
 window.equipSkin=id=>{const sk=SD[id];if(!sk||!save.ownedSkins.includes(id))return;save.selSkins[sk.b]=id;persist();renderAll();};
 window.claimRoad=i=>{const r=applyRoadReward(i);if(!r)return;persist();renderAll();};
-// ── ROTATING DAILY SHOP ──
-const SHOP_ROTATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const SHOP_ROTATION_MS = 24 * 60 * 60 * 1000;
 const SHOP_SLOTS = 6;
-const SHOP_DISCOUNT = 0.15; // 15% off
 
 function getShopSeed(){
-  // Reset every 24h — use UTC day as seed base
   const now=Date.now();
   const dayMs=Math.floor(now/SHOP_ROTATION_MS)*SHOP_ROTATION_MS;
   if(dayMs!==save.shopLastReset){save.shopLastReset=dayMs;save.shopSeed=dayMs;persist();}
   return save.shopSeed;
 }
 function seededRand(seed,i){
-  // Simple seeded pseudo-random
   let h=seed^(i*2654435761);h=Math.imul(h^(h>>>16),0x45d9f3b);h=Math.imul(h^(h>>>16),0x45d9f3b);
   return((h^(h>>>16))>>>0)/0xFFFFFFFF;
 }
 function getRotatingShopSkins(){
   const seed=getShopSeed();
-  // Pool: all shop skins not yet owned
-  const pool=Object.values(SD).filter(s=>s.src==='shop'&&!save.ownedSkins.includes(s.id));
+  // Only skins of brawlers the player owns, not already owned
+  const pool=Object.values(SD).filter(s=>s.src==='shop'&&!save.ownedSkins.includes(s.id)&&save.ownedBrawlers.includes(s.b));
   if(!pool.length)return[];
-  // Deterministic shuffle from seed
   const shuffled=[...pool];
   for(let i=shuffled.length-1;i>0;i--){
     const j=Math.floor(seededRand(seed,i)*(i+1));
@@ -1991,11 +1983,9 @@ function getTimeUntilReset(){
   const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);
   return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
-// Update timer every second
 setInterval(()=>{
   const el=document.getElementById('shopTimer');
   if(el&&el.offsetParent!==null)el.textContent=getTimeUntilReset();
-  // Check if shop needs to reset
   const now=Date.now(),dayMs=Math.floor(now/SHOP_ROTATION_MS)*SHOP_ROTATION_MS;
   if(dayMs!==save.shopLastReset){save.shopLastReset=dayMs;save.shopSeed=dayMs;persist();renderShop();}
 },1000);
@@ -2003,9 +1993,8 @@ setInterval(()=>{
 window.buyShopRotation=function(id){
   const sk=SD[id];if(!sk||save.ownedSkins.includes(id))return;
   if(!save.ownedBrawlers.includes(sk.b))return;
-  const price=Math.round(sk.price*(1-SHOP_DISCOUNT));
-  if(save.coins<price){alert(`Necesitas 🪙${price}. Tienes 🪙${save.coins}.`);return;}
-  save.coins-=price;save.ownedSkins.push(id);persist();renderShop();renderAll();
+  if(save.coins<sk.price){alert(`Necesitas 🪙${sk.price}. Tienes 🪙${save.coins}.`);return;}
+  save.coins-=sk.price;save.ownedSkins.push(id);persist();renderShop();renderAll();
 };
 
 function renderShop(){
@@ -2014,40 +2003,19 @@ function renderShop(){
   const rotating=getRotatingShopSkins();
   document.getElementById('shopTimer').textContent=getTimeUntilReset();
   if(rotating.length===0){
-    document.getElementById('shopRotatingGrid').innerHTML=`<div class="ic" style="grid-column:1/-1;text-align:center;padding:24px"><div style="font-size:32px;margin-bottom:10px">🎉</div><div style="font-family:var(--font);font-weight:700">¡Ya tienes todas las skins disponibles!</div><div class="sm" style="margin-top:6px">Vuelve mañana para nuevas ofertas o desbloquea más brawlers.</div></div>`;
+    document.getElementById('shopRotatingGrid').innerHTML=`<div class="ic" style="grid-column:1/-1;text-align:center;padding:24px"><div style="font-size:32px;margin-bottom:10px">🎉</div><div style="font-family:var(--font);font-weight:700">¡No hay más skins disponibles!</div><div class="sm" style="margin-top:6px">Ya tienes todas las skins de tus brawlers, o vuelve mañana con más brawlers desbloqueados.</div></div>`;
   }else{
     document.getElementById('shopRotatingGrid').innerHTML=rotating.map(item=>{
-      const bUnlocked=save.ownedBrawlers.includes(item.b);
-      const discPrice=Math.round(item.price*(1-SHOP_DISCOUNT));
-      const canBuy=bUnlocked&&save.coins>=discPrice;
-      return`<div class="ic" style="border-color:rgba(255,215,106,.3);background:linear-gradient(160deg,rgba(255,215,106,.05),rgba(4,6,18,.95))">
-        <div style="position:relative;display:inline-block;margin-bottom:9px">
-          <div style="width:52px;height:52px;border-radius:50%;background:${item.c};border:3px solid ${item.s}44"></div>
-          <span style="position:absolute;top:-6px;right:-10px;background:#ff4060;color:#fff;font-size:9px;font-weight:900;font-family:var(--font);padding:2px 5px;border-radius:999px">-${Math.round(SHOP_DISCOUNT*100)}%</span>
-        </div>
+      const canBuy=save.coins>=item.price;
+      return`<div class="ic" style="border-color:rgba(255,215,106,.25)">
+        <div style="width:52px;height:52px;border-radius:50%;background:${item.c};border:3px solid ${item.s}44;margin-bottom:9px"></div>
         <h3>${BD[item.b]?.name} · ${item.name}</h3>
-        <div style="display:flex;align-items:center;gap:7px;margin:5px 0 8px">
-          <span style="font-size:15px;font-weight:700;color:var(--accent2);font-family:var(--font)">🪙 ${discPrice}</span>
-          <span style="font-size:11px;color:var(--muted);text-decoration:line-through">🪙 ${item.price}</span>
-        </div>
-        <div class="sm" style="margin-bottom:8px">${!bUnlocked?'⚠️ Requiere brawler':'✓ Disponible hoy'}</div>
-        <button class="${canBuy?'bg':'bs'}" style="width:100%;font-size:12px" ${!bUnlocked||save.coins<discPrice?'disabled':''} onclick="buyShopRotation('${item.id}')">Comprar oferta</button>
+        <div class="sp">🪙 ${item.price}</div>
+        <div class="sm" style="margin-bottom:8px">Disponible hoy</div>
+        <button class="${canBuy?'bg':'bs'}" style="width:100%;font-size:12px" ${!canBuy?'disabled':''} onclick="buyShopRotation('${item.id}')">Comprar</button>
       </div>`;
     }).join('');
   }
-  // ── All skins tab ──
-  document.getElementById('tab-shopSkins').innerHTML=Object.values(SD).filter(s=>s.src==='shop').map(item=>{
-    const owned=save.ownedSkins.includes(item.id),bUnlocked=save.ownedBrawlers.includes(item.b);
-    const isInRotation=rotating.some(r=>r.id===item.id);
-    return`<div class="ic" style="${isInRotation?'border-color:rgba(255,215,106,.4)':''}">
-      ${isInRotation?'<div style="font-size:10px;font-weight:700;color:var(--accent2);margin-bottom:5px">⭐ En oferta hoy</div>':''}
-      <div style="width:52px;height:52px;border-radius:50%;background:${item.c};border:3px solid ${item.s}33;margin-bottom:9px"></div>
-      <h3>${BD[item.b]?.name} · ${item.name}</h3>
-      <div class="sp">🪙 ${isInRotation&&!owned?Math.round(item.price*(1-SHOP_DISCOUNT)):item.price}</div>
-      <div class="sm" style="margin-bottom:8px">${owned?T('bought'):!bUnlocked?T('needsBrawler'):T('available')}</div>
-      <button class="${owned?'bs':'bg'}" style="width:100%;font-size:12px" ${owned||!bUnlocked||save.coins<(isInRotation?Math.round(item.price*(1-SHOP_DISCOUNT)):item.price)?'disabled':''} onclick="${isInRotation&&!owned?`buyShopRotation('${item.id}')`:`buySkin('${item.id}')`}">${owned?T('bought'):T('buy')}</button>
-    </div>`;
-  }).join('');
   // ── Owned skins tab ──
   document.getElementById('tab-shopOwned').innerHTML=save.ownedSkins.map(id=>{
     const item=SD[id];if(!item)return'';const eq=save.selSkins[item.b]===id;
