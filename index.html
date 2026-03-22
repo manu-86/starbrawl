@@ -481,7 +481,7 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
       </div>
       <div id="rLevelUp" style="display:none;text-align:center;margin-top:8px;font-family:var(--font);font-weight:900;font-size:14px;color:var(--accent2)">🎉 ¡NIVEL SUBIDO!</div>
     </div>
-    <div style="display:flex;justify-content:center;gap:10px">
+    <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">
       <button class="bp" id="playAgainBtn" style="padding:13px 26px;font-size:14px" data-t="playAgain">⚔️ Jugar de nuevo</button>
       <button class="bs" id="toMenuBtn" style="padding:13px 26px;font-size:14px" data-t="menu">🏠 Menú</button>
     </div>
@@ -492,6 +492,8 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
 'use strict';
 // Spanish-only translations
 const currentLang='es';
+// Forward declaration — real function defined later in settings script
+window.advanceMission=window.advanceMission||function(){};
 const _T={
   unlock:'Seleccionar',active:'✓ Activo',locked:'🔒 Bloqueado',
   starrExclusive:'⭐ Starr Drop exclusivo',totalCups:'copas totales',
@@ -1028,9 +1030,48 @@ const resumeGame=()=>{if(game.state==='paused'){game.state='playing';document.ge
 // ═══════════════ FEED & PARTICLES ═══════════════
 function addFeed(text){game.feed.unshift({text,life:5});if(game.feed.length>7)game.feed.length=7;renderFeed();}
 const renderFeed=()=>{document.getElementById('feed').innerHTML=game.feed.map(i=>`<div class="fi">${i.text}</div>`).join('');};
-function burst(x,y,color,count=12){for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),s=rand(60,220);game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.25,.65),color,size:rand(2.5,5)});}}
+function burst(x,y,color,count=12){
+  for(let i=0;i<count;i++){
+    const a=rand(0,Math.PI*2),s=rand(60,220);
+    game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.25,.65),maxLife:rand(.25,.65),color,size:rand(2.5,5),type:'square'});
+  }
+}
+// Big kill explosion — ring + sparks + shockwave
+function killBurst(x,y,color){
+  const c2=cForSkin||color;
+  // Outer ring of sparks
+  for(let i=0;i<28;i++){
+    const a=i/28*Math.PI*2,s=rand(140,340);
+    const ml=rand(.4,.9);
+    game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:ml,maxLife:ml,color,size:rand(3,7),type:'square'});
+  }
+  // Central bright flare (ring that expands and fades)
+  game.particles.push({x,y,vx:0,vy:0,life:.55,maxLife:.55,color:'#fff',size:38,type:'ring',growR:80});
+  game.particles.push({x,y,vx:0,vy:0,life:.35,maxLife:.35,color,size:22,type:'ring',growR:55});
+  // Skull emoji floats up
+  game.particles.push({x,y:y-10,vx:rand(-15,15),vy:-90,life:1.1,maxLife:1.1,color:'#fff',size:18,type:'text',text:'💀'});
+  shake(5,.28);
+}
+// Super flash — screen-space burst + colored ring
+function superFlash(x,y,color){
+  for(let i=0;i<36;i++){
+    const a=i/36*Math.PI*2,s=rand(180,420);
+    const ml=rand(.35,.75);
+    game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:ml,maxLife:ml,color,size:rand(4,9),type:'square'});
+  }
+  // Two expanding rings
+  game.particles.push({x,y,vx:0,vy:0,life:.6,maxLife:.6,color:'#fff',size:50,type:'ring',growR:120});
+  game.particles.push({x,y,vx:0,vy:0,life:.45,maxLife:.45,color,size:30,type:'ring',growR:90});
+  // Glowing center pulse
+  game.particles.push({x,y,vx:0,vy:0,life:.3,maxLife:.3,color:'#fff',size:28,type:'flash'});
+}
 function updateParticles(dt){
-  for(let i=game.particles.length-1;i>=0;i--){const p=game.particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.93;p.vy*=.93;if(p.life<=0)game.particles.splice(i,1);}
+  for(let i=game.particles.length-1;i>=0;i--){
+    const p=game.particles[i];p.life-=dt;
+    if(p.type!=='ring'&&p.type!=='flash'&&p.type!=='text'){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.91;p.vy*=.91;}
+    if(p.type==='text'){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy*=.94;}
+    if(p.life<=0)game.particles.splice(i,1);
+  }
   for(let i=game.feed.length-1;i>=0;i--){game.feed[i].life-=dt;if(game.feed[i].life<=0)game.feed.splice(i,1);}
   renderFeed();
 }
@@ -1116,7 +1157,7 @@ function triggerAttack(owner,angle){
 // ── Per-brawler unique supers ──
 function fireSuper(f,isBot=false){
   if(f.supCharge<f.supMax)return false;
-  f.supCharge=0;burst(f.x,f.y,'#ffd76a',24);
+  f.supCharge=0;burst(f.x,f.y,'#ffd76a',24);superFlash(f.x,f.y,cForSkin(f.skinId));
   const col=cForSkin(f.skinId);
   const bid=f.bid;
   // Determine base brawler id (strip any suffix)
@@ -1204,7 +1245,7 @@ function fireSuper(f,isBot=false){
 }
 function useSuper(){
   const p=pObj();if(!p||p.dead)return;
-  fireSuper(p,false);
+  if(fireSuper(p,false))advanceMission('supers',1);
 }
 
 // ═══════════════ KILL STREAK ═══════════════
@@ -1228,11 +1269,16 @@ function registerP(f,p){f.finalPlacement=p;if(!game.placements.includes(f.id))ga
 function defeatFighter(v,k){
   if(v.dead)return;
   const placement=aliveCount();v.dead=true;registerP(v,placement);
-  burst(v.x,v.y,v.isPlayer?'#87f2c7':'#ff8fa1',22);
+  const deathCol=cForSkin(v.skinId);
+  if(v.isPlayer){
+    burst(v.x,v.y,'#87f2c7',22);
+    if(k)addFeed(`💀 ${k.name} → ${v.name}`);
+    playSound('death');endMatch(placement);return;
+  }
+  killBurst(v.x,v.y,deathCol);
   if(k){k.kills++;processStreak(k);}
   if(k&&!v.isPlayer)k.supCharge=clamp(k.supCharge+(k.scKill||35),0,k.supMax);
   if(k)addFeed(`💀 ${k.name} → ${v.name}`);
-  if(v.isPlayer){playSound('death');endMatch(placement);return;}
   playSound('death');
   if(v.powerLevel>0)game.pickups.push({x:v.x,y:v.y,r:14,type:'power',amt:v.powerLevel});
   else game.pickups.push({x:v.x,y:v.y,r:14,type:'power',amt:1});
@@ -1252,7 +1298,7 @@ function processBullets(dt,now){
       const box=game.boxes[bi];
       if(b.x>=box.x&&b.x<=box.x+box.w&&b.y>=box.y&&b.y<=box.y+box.h){
         box.hp-=b.damage;burst(b.x,b.y,'#ffd76a',5);
-        if(box.hp<=0){burst(box.x+22,box.y+22,'#74ff7e',24);game.pickups.push({x:box.x+22,y:box.y+22,r:14,type:'power',amt:1});game.boxes.splice(bi,1);}
+        if(box.hp<=0){burst(box.x+22,box.y+22,'#74ff7e',24);game.pickups.push({x:box.x+22,y:box.y+22,r:14,type:'power',amt:1});game.boxes.splice(bi,1);if(b.ownerId===game.playerId)advanceMission('boxes',1);}
         if(b.explosive){const o=game.fighters.find(x=>x.id===b.ownerId);if(o)explode(b.x,b.y,b.expR,o);}
         rm=true;break;
       }
@@ -1811,7 +1857,32 @@ function drawBullets(){
     else{ctx.fillStyle=b.color;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();}
   }
 }
-function drawParticles(){for(const p of game.particles){ctx.globalAlpha=clamp(p.life/.65,0,1);ctx.fillStyle=p.color;ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);}ctx.globalAlpha=1;}
+function drawParticles(){
+  for(const p of game.particles){
+    const t=p.life/p.maxLife; // 1=fresh, 0=dead
+    if(p.type==='ring'){
+      const r=p.size+(1-t)*(p.growR||60);
+      ctx.globalAlpha=clamp(t*1.5,0,1);
+      ctx.strokeStyle=p.color;ctx.lineWidth=3*(t);
+      ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.stroke();
+    }else if(p.type==='flash'){
+      const r=p.size*(1-t*.5);
+      ctx.globalAlpha=t*.8;
+      const grd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
+      grd.addColorStop(0,'rgba(255,255,255,0.9)');grd.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=grd;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+    }else if(p.type==='text'){
+      ctx.globalAlpha=clamp(t*1.2,0,1);
+      ctx.font=`bold ${p.size}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(p.text,p.x,p.y);
+    }else{
+      ctx.globalAlpha=clamp(t/.65,0,1);
+      ctx.fillStyle=p.color;
+      ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);
+    }
+  }
+  ctx.globalAlpha=1;ctx.textBaseline='alphabetic';
+}
 const visibleToP=f=>{const p=pObj();if(!f||f.dead)return false;if(f.isPlayer)return true;if(f.invisible>0)return false;return!hiddenFrom(p,f);};
 function drawMinimap(){
   mctx.clearRect(0,0,minimap.width,minimap.height);mctx.fillStyle='#060a18';mctx.fillRect(0,0,minimap.width,minimap.height);
@@ -2062,8 +2133,36 @@ setInterval(()=>{
   const el=document.getElementById('shopTimer');
   if(el&&el.offsetParent!==null)el.textContent=getTimeUntilReset();
   const now=Date.now(),dayMs=Math.floor(now/SHOP_ROTATION_MS)*SHOP_ROTATION_MS;
-  if(dayMs!==save.shopLastReset){save.shopLastReset=dayMs;save.shopSeed=dayMs;persist();renderShop();}
+  if(dayMs!==save.shopLastReset){
+    save.shopLastReset=dayMs;save.shopSeed=dayMs;persist();renderShop();
+    showShopRotationToast();
+  }
 },1000);
+
+function showShopRotationToast(){
+  // Remove existing toast if any
+  const old=document.getElementById('shopRotToast');if(old)old.remove();
+  const toast=document.createElement('div');
+  toast.id='shopRotToast';
+  toast.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);z-index:80;background:linear-gradient(135deg,rgba(255,215,106,.18),rgba(4,6,18,.97));border:1px solid rgba(255,215,106,.55);border-radius:14px;padding:13px 22px;font-family:var(--font);font-weight:700;font-size:14px;color:var(--accent2);display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.175,.885,.32,1.275),opacity .4s ease;opacity:0;pointer-events:none';
+  toast.innerHTML='🔄 <span>¡La tienda ha rotado! Nuevas skins disponibles.</span> <span style="font-size:11px;color:var(--muted);font-weight:600">Toca para ver</span>';
+  toast.style.pointerEvents='all';
+  toast.addEventListener('click',()=>{openScreen('shopScreen');toast.remove();});
+  document.body.appendChild(toast);
+  // Animate in
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      toast.style.transform='translateX(-50%) translateY(0)';
+      toast.style.opacity='1';
+    });
+  });
+  // Auto dismiss after 6s
+  setTimeout(()=>{
+    toast.style.transform='translateX(-50%) translateY(80px)';
+    toast.style.opacity='0';
+    setTimeout(()=>toast.remove(),400);
+  },6000);
+}
 
 window.buyShopRotation=function(id){
   const sk=SD[id];if(!sk||save.ownedSkins.includes(id))return;
@@ -2152,6 +2251,10 @@ document.getElementById('openBrawlersBtn').addEventListener('click',()=>openScre
 document.getElementById('openCustomBtn').addEventListener('click',()=>openScreen('customScreen'));
 document.getElementById('openPassBtn').addEventListener('click',()=>openScreen('passScreen'));
 document.getElementById('openShopBtn').addEventListener('click',()=>openScreen('shopScreen'));
+// These three use render functions defined in later script blocks — called via window to be safe
+document.getElementById('openHistoryBtn').addEventListener('click',()=>{window._renderHistory&&window._renderHistory();openScreen('historyScreen');});
+document.getElementById('openBrawlerStatsBtn').addEventListener('click',()=>{window._renderBrawlerStats&&window._renderBrawlerStats();openScreen('brawlerStatsScreen');});
+document.getElementById('openSettingsBtn').addEventListener('click',()=>{window._renderKeybindGrid&&window._renderKeybindGrid();openScreen('settingsScreen');});
 document.getElementById('sndBtn').addEventListener('click',()=>{soundOn=!soundOn;save.soundOn=soundOn;persist();document.getElementById('sndBtn').textContent=soundOn?'🔊':'🔇';});
 // Single delegated handler covers ALL close buttons, including those added later
 document.body.addEventListener('click',e=>{
@@ -2892,6 +2995,30 @@ persist();
   </div>
 </div>
 
+
+<div id="seasonScreen" class="screen">
+  <div class="card" style="width:min(820px,97vw)">
+    <div class="stb">
+      <div>
+        <h2>🎟️ Pase de Temporada</h2>
+        <div class="sm" style="margin-top:2px">Temporada acaba en: <strong id="seasonTimer" style="color:var(--accent)">--d --h</strong> &nbsp;·&nbsp; XP de temporada: <strong id="seasonXpDisplay">0</strong></div>
+      </div>
+      <button class="bs closeScreenBtn" data-close="seasonScreen">✕</button>
+    </div>
+    <!-- XP bar -->
+    <div style="margin:12px 0;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.08)">
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--font);font-weight:700;margin-bottom:6px">
+        <span>🎟️ Nivel de temporada <span id="seasonLvDisplay">1</span></span>
+        <span style="color:var(--accent2)"><span id="seasonXpCur">0</span> / <span id="seasonXpNext">500</span> XP</span>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden">
+        <div id="seasonXpBar" style="height:100%;background:linear-gradient(90deg,#c084fc,#ffd76a);border-radius:999px;width:0%;transition:width .6s ease"></div>
+      </div>
+    </div>
+    <div class="rdscroll"><div id="seasonTrack" style="display:flex;gap:10px;padding:4px 0"></div></div>
+  </div>
+</div>
+
 <!-- SETTINGS SCREEN -->
 <div id="settingsScreen" class="screen">
   <div class="card" style="width:min(820px,97vw)">
@@ -2925,19 +3052,220 @@ persist();
 </div>
 
 <script>
-// ══ SETTINGS SYSTEM ══
+const isMobile=()=>('ontouchstart' in window)||navigator.maxTouchPoints>0||window.matchMedia('(pointer:coarse)').matches;
 
-// Translations removed — Spanish only, T() defined in main script
-// ── VOLUME ──
+// ══════════════════════════════════════
+//  TANDA 1+2 — all new features
+// ══════════════════════════════════════
+
+// ── Settings button ──
+// (listener registered in main script block using window._renderKeybindGrid)
+
+// ── Screen buttons ──
+// (listeners registered in main script block using window._renderHistory etc.)
+
+// ── Toggle touch controls ──
+const toggleBtn=document.getElementById('toggleTouchBtn');
+if(typeof isMobile==='function'){
+  if(isMobile()&&save.touchEnabled==null)save.touchEnabled=true;
+}
+if(save.touchEnabled==null)save.touchEnabled=false;
+toggleBtn.style.display='block';
+toggleBtn.textContent=`📱 Controles táctiles: ${save.touchEnabled?'ON':'OFF'}`;
+toggleBtn.className=save.touchEnabled?'nbtn bp':'nbtn';
+toggleBtn.addEventListener('click',()=>{
+  save.touchEnabled=!save.touchEnabled;persist();
+  toggleBtn.textContent=`📱 Controles táctiles: ${save.touchEnabled?'ON':'OFF'}`;
+  toggleBtn.className=save.touchEnabled?'nbtn bp':'nbtn';
+});
+
+// ── Mobile touch controls ──
+
+const rotateHint=document.getElementById('rotateHint');
+function checkOrientation(){
+  if(!isMobile()){if(rotateHint)rotateHint.style.display='none';return;}
+  const isPortrait=window.innerHeight>window.innerWidth;
+  const playing=game.state==='playing'||game.state==='paused';
+  if(rotateHint)rotateHint.style.display=(isPortrait&&playing)?'flex':'none';
+}
+window.addEventListener('resize',checkOrientation);
+window.addEventListener('orientationchange',()=>setTimeout(checkOrientation,250));
+function requestLandscape(){try{screen.orientation?.lock('landscape').catch(()=>{})}catch(e){}}
+function releaseLandscape(){try{screen.orientation?.unlock()}catch(e){}}
+
+function showTouchControls(show){
+  const tc=document.getElementById('touchControls');
+  if(tc){if(show)tc.classList.add('show');else tc.classList.remove('show');}
+}
+
+const joy={active:false,id:-1,baseX:0,baseY:0,dx:0,dy:0,maxR:48};
+const joyZone=document.getElementById('joyZone');
+const joyInner=document.getElementById('joyInner');
+function getJoyRect(){return joyZone.getBoundingClientRect();}
+
+joyZone.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.changedTouches[0];const r=getJoyRect();
+  joy.active=true;joy.id=t.identifier;
+  joy.baseX=r.left+r.width/2;joy.baseY=r.top+r.height/2;
+  updateJoy(t.clientX,t.clientY);
+},{passive:false});
+joyZone.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches){if(t.identifier===joy.id)updateJoy(t.clientX,t.clientY);}
+},{passive:false});
+joyZone.addEventListener('touchend',e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    if(t.identifier===joy.id){
+      joy.active=false;joy.dx=0;joy.dy=0;
+      joyInner.style.top='50%';joyInner.style.left='50%';
+      IN.up=false;IN.down=false;IN.left=false;IN.right=false;
+    }
+  }
+},{passive:false});
+function updateJoy(cx,cy){
+  let dx=cx-joy.baseX,dy=cy-joy.baseY;
+  const len=Math.hypot(dx,dy);
+  if(len>joy.maxR){dx=dx/len*joy.maxR;dy=dy/len*joy.maxR;}
+  joy.dx=dx/joy.maxR;joy.dy=dy/joy.maxR;
+  const r=getJoyRect();
+  joyInner.style.left=(r.width/2+dx)+'px';
+  joyInner.style.top=(r.height/2+dy)+'px';
+  const th=0.25;
+  IN.left=joy.dx<-th;IN.right=joy.dx>th;IN.up=joy.dy<-th;IN.down=joy.dy>th;
+}
+
+let aimTouchId=-1;
+const aimZone=document.getElementById('game');
+aimZone.addEventListener('touchstart',e=>{
+  for(const t of e.changedTouches){
+    if(t.clientX/window.innerWidth>0.45&&aimTouchId===-1){
+      aimTouchId=t.identifier;updateAim(t.clientX,t.clientY);IN.shoot=true;
+      document.getElementById('btnShoot').classList.add('shooting');
+    }
+  }
+},{passive:true});
+aimZone.addEventListener('touchmove',e=>{
+  for(const t of e.changedTouches){if(t.identifier===aimTouchId)updateAim(t.clientX,t.clientY);}
+},{passive:true});
+aimZone.addEventListener('touchend',e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===aimTouchId){aimTouchId=-1;IN.shoot=false;document.getElementById('btnShoot').classList.remove('shooting');}
+  }
+},{passive:true});
+function updateAim(cx,cy){
+  if(game.state!=='playing')return;
+  const r=GC.getBoundingClientRect();IN.mx=cx-r.left;IN.my=cy-r.top;
+}
+document.getElementById('btnShoot').addEventListener('touchstart',e=>{e.preventDefault();IN.shoot=true;document.getElementById('btnShoot').classList.add('shooting');},{passive:false});
+document.getElementById('btnShoot').addEventListener('touchend',e=>{e.preventDefault();IN.shoot=false;document.getElementById('btnShoot').classList.remove('shooting');},{passive:false});
+document.getElementById('btnSuper').addEventListener('touchstart',e=>{e.preventDefault();if(game.state==='playing')useSuper();},{passive:false});
+document.getElementById('btnGadget').addEventListener('touchstart',e=>{e.preventDefault();if(game.state==='playing')activateGadget();},{passive:false});
+document.getElementById('btnPause').addEventListener('touchstart',e=>{e.preventDefault();if(game.state==='playing')pauseGame();else if(game.state==='paused')resumeGame();},{passive:false});
+
+const _origUpdateHudMobile=updateHud;
+updateHud=function(){
+  _origUpdateHudMobile();
+  if(!isMobile()&&!save.touchEnabled)return;
+  const p=pObj();if(!p)return;
+  const sb=document.getElementById('btnSuper');
+  if(sb){if(p.supCharge>=p.supMax)sb.classList.add('ready');else sb.classList.remove('ready');}
+  const gb=document.getElementById('btnGadget');
+  if(gb){
+    if(p.hasGadget&&p.gadgetCD<=0)gb.classList.add('ready');else gb.classList.remove('ready');
+    const gd=gadgetDefs?.[p.bid];if(gd)gb.textContent=gd.icon;
+  }
+};
+
+const _origStartMatchMobile=startMatch;
+startMatch=function(){
+  _origStartMatchMobile();
+  if(save.touchEnabled||isMobile()){showTouchControls(true);requestLandscape();}
+  setTimeout(checkOrientation,100);
+};
+const _origGoToMenuMobile=goToMenu;
+goToMenu=function(){
+  showTouchControls(false);releaseLandscape();
+  if(rotateHint)rotateHint.style.display='none';
+  _origGoToMenuMobile();
+};
+GC.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('touchmove',e=>{if(e.target===GC||e.target===joyZone)e.preventDefault();},{passive:false});
+if(isMobile()){
+  document.querySelectorAll('.abtn').forEach(b=>b.style.minWidth='56px');
+  const hb=document.querySelector('.helpbar');if(hb)hb.style.display='none';
+}
+
+// ══ KEYBINDS ══
+const DEFAULT_KEYS={up:'w',down:'s',left:'a',right:'d',super:'e',gadget:'g'};
+// keybinds declared in main script — just update it here
+keybinds={...DEFAULT_KEYS,...(save.keybinds||{})};
+let rebinding=null;
+function getKeyLabel(action){return keybinds[action]||DEFAULT_KEYS[action];}
+function saveKeybinds(){save.keybinds={...keybinds};persist();}
+function resetKeybinds(){keybinds={...DEFAULT_KEYS};saveKeybinds();renderKeybindGrid();}
+function renderKeybindGrid(){
+  const actions=[
+    {id:'up',label:'Mover arriba'},{id:'down',label:'Mover abajo'},
+    {id:'left',label:'Mover izquierda'},{id:'right',label:'Mover derecha'},
+    {id:'super',label:'Súper'},{id:'gadget',label:'Gadget'},
+  ];
+  const grid=document.getElementById('keybindGrid');
+  if(!grid)return;
+  grid.innerHTML=actions.map(a=>`
+    <div class="ic" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px">
+      <span style="font-size:13px;font-weight:600">${a.label}</span>
+      <button id="kb_${a.id}" class="${rebinding===a.id?'borange':'bs'}" style="min-width:80px;padding:8px 14px;font-size:13px;font-family:var(--font);font-weight:900"
+        onclick="startRebind('${a.id}')">
+        ${rebinding===a.id?'Pulsa una tecla...':keybinds[a.id].toUpperCase()}
+      </button>
+    </div>`).join('');
+}
+window.startRebind=function(action){
+  rebinding=action;
+  const hint=document.getElementById('rebindHint');if(hint)hint.textContent='Pulsa una tecla... ('+action+')';
+  renderKeybindGrid();
+};
+window.addEventListener('keydown',e=>{
+  if(!rebinding)return;
+  if(e.key==='Escape'){rebinding=null;const h=document.getElementById('rebindHint');if(h)h.textContent='';renderKeybindGrid();return;}
+  const k=e.key.toLowerCase();
+  if(k.length===1||k.startsWith('arrow')){
+    keybinds[rebinding]=k;saveKeybinds();rebinding=null;
+    const h=document.getElementById('rebindHint');if(h){h.textContent='✓ Guardado';setTimeout(()=>{if(h)h.textContent='';},1200);}
+    renderKeybindGrid();
+  }
+  e.preventDefault();e.stopPropagation();
+},{capture:true});
+
+// Replace game keydown with keybind-aware version
+window.removeEventListener('keydown',window._mainKeyDown);
+window.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k===keybinds.up||k==='arrowup')IN.up=true;
+  if(k===keybinds.down||k==='arrowdown')IN.down=true;
+  if(k===keybinds.left||k==='arrowleft')IN.left=true;
+  if(k===keybinds.right||k==='arrowright')IN.right=true;
+  if(k===keybinds.super&&game.state==='playing')useSuper();
+  if(k===keybinds.gadget&&game.state==='playing')activateGadget();
+  if(e.key==='Escape'){if(game.state==='playing')pauseGame();else if(game.state==='paused')resumeGame();}
+});
+window.addEventListener('keyup',e=>{
+  const k=e.key.toLowerCase();
+  if(k===keybinds.up||k==='arrowup')IN.up=false;
+  if(k===keybinds.down||k==='arrowdown')IN.down=false;
+  if(k===keybinds.left||k==='arrowleft')IN.left=false;
+  if(k===keybinds.right||k==='arrowright')IN.right=false;
+});
+
+// ══ VOLUME ══
 let masterGain=null,volumeLevel=save.volume!=null?save.volume:.7;
 function getMasterGain(){
   const c=gACtx();
   if(!masterGain){masterGain=c.createGain();masterGain.connect(c.destination);masterGain.gain.value=volumeLevel;}
   return masterGain;
 }
-// patch audio to route through masterGain
-const _origGACtx=gACtx;
-// override playSound to use gain node
 const _origPlaySound=playSound;
 playSound=function(type){
   if(!soundOn)return;
@@ -2967,7 +3295,7 @@ function setVolume(v){
   soundOn=v>0;save.soundOn=soundOn;
   document.getElementById('volVal').textContent=v+'%';
   document.getElementById('volIcon').textContent=v===0?'🔇':v<40?'🔉':'🔊';
-  document.getElementById('volMuteBtn').textContent=v===0?T('unmute'):T('mute');
+  document.getElementById('volMuteBtn').textContent=v===0?'Activar':'Silenciar';
   document.getElementById('sndBtn').textContent=soundOn?'🔊':'🔇';
 }
 document.getElementById('volSlider').addEventListener('input',e=>setVolume(Number(e.target.value)));
@@ -2976,314 +3304,39 @@ document.getElementById('volMuteBtn').addEventListener('click',()=>{
   if(cur>0){document.getElementById('volSlider').dataset.prev=cur;document.getElementById('volSlider').value=0;setVolume(0);}
   else{const prev=Number(document.getElementById('volSlider').dataset.prev)||70;document.getElementById('volSlider').value=prev;setVolume(prev);}
 });
-// init slider from save
 document.getElementById('volSlider').value=Math.round(volumeLevel*100);
 setVolume(Math.round(volumeLevel*100));
 
-// ── KEYBINDS ──
-const DEFAULT_KEYS={up:'w',down:'s',left:'a',right:'d',super:'e',gadget:'g'};
-keybinds={...DEFAULT_KEYS,...(save.keybinds||{})};
-let rebinding=null;
-getKeyLabel=function(action){return keybinds[action]||DEFAULT_KEYS[action];};
-function saveKeybinds(){save.keybinds={...keybinds};persist();}
-function resetKeybinds(){keybinds={...DEFAULT_KEYS};saveKeybinds();renderKeybindGrid();applyKeybinds();document.getElementById('rebindHint').textContent='';}
-function applyKeybinds(){
-  // patch the keydown handler to use current keybinds
-  // done dynamically in the existing listener below
-}
-function renderKeybindGrid(){
-  const actions=[
-    {id:'up',   label:T('actionUp')},
-    {id:'down', label:T('actionDown')},
-    {id:'left', label:T('actionLeft')},
-    {id:'right',label:T('actionRight')},
-    {id:'super',label:T('actionSuper')},
-    {id:'gadget',label:T('actionGadget')},
-  ];
-  document.getElementById('keybindGrid').innerHTML=actions.map(a=>`
-    <div class="ic" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px">
-      <span style="font-size:13px;font-weight:600">${a.label}</span>
-      <button id="kb_${a.id}" class="${rebinding===a.id?'borange':'bs'}" style="min-width:80px;padding:8px 14px;font-size:13px;font-family:var(--font);font-weight:900"
-        onclick="startRebind('${a.id}')">
-        ${rebinding===a.id?T('pressKey'):keybinds[a.id].toUpperCase()}
-      </button>
-    </div>`).join('');
-}
-window.startRebind=function(action){
-  rebinding=action;
-  document.getElementById('rebindHint').textContent=T('pressKey')+' ('+action+')';
-  renderKeybindGrid();
-};
-// Listen for rebind keypress
-window.addEventListener('keydown',e=>{
-  if(!rebinding)return;
-  if(e.key==='Escape'){rebinding=null;document.getElementById('rebindHint').textContent='';renderKeybindGrid();return;}
-  const k=e.key.toLowerCase();
-  if(['arrowup','arrowdown','arrowleft','arrowright'].includes(k)||k.length===1){
-    keybinds[rebinding]=k;saveKeybinds();rebinding=null;
-    document.getElementById('rebindHint').textContent='✓ Guardado';
-    setTimeout(()=>{if(document.getElementById('rebindHint'))document.getElementById('rebindHint').textContent='';},1200);
-    renderKeybindGrid();
-  }
-  e.preventDefault();e.stopPropagation();
-},{capture:true});
-
-// Patch the game input handler to respect keybinds
-// Override existing handler by replacing direction checks
-const _gameKeyDown=Array.from({length:1}).map(()=>{
-  // We inject into the existing keydown by reading keybinds at check time
-  // The original handler uses hardcoded 'w','s','a','d' — we replace it:
-  window.removeEventListener('keydown',window._mainKeyDown);
-  const handler=e=>{
-    const k=e.key.toLowerCase();
-    if(k===keybinds.up||k==='arrowup')IN.up=true;
-    if(k===keybinds.down||k==='arrowdown')IN.down=true;
-    if(k===keybinds.left||k==='arrowleft')IN.left=true;
-    if(k===keybinds.right||k==='arrowright')IN.right=true;
-    if(k===keybinds.super&&game.state==='playing')useSuper();
-    if(k===keybinds.gadget&&game.state==='playing')activateGadget();
-    if(e.key==='Escape'){if(game.state==='playing')pauseGame();else if(game.state==='paused')resumeGame();}
-  };
-  window.addEventListener('keydown',handler);
-  const upHandler=e=>{
-    const k=e.key.toLowerCase();
-    if(k===keybinds.up||k==='arrowup')IN.up=false;
-    if(k===keybinds.down||k==='arrowdown')IN.down=false;
-    if(k===keybinds.left||k==='arrowleft')IN.left=false;
-    if(k===keybinds.right||k==='arrowright')IN.right=false;
-  };
-  window.addEventListener('keyup',upHandler);
-  return handler;
-})[0];
-
-// ── OPEN SETTINGS ──
-document.getElementById('openSettingsBtn').addEventListener('click',()=>{
-  renderKeybindGrid();
-  openScreen('settingsScreen');
-});
-
-
-// ══ MOBILE TOUCH CONTROLS ══
-const isMobile=()=>('ontouchstart' in window)||navigator.maxTouchPoints>0||window.matchMedia('(pointer:coarse)').matches;
-
-// Orientation handling
-const rotateHint=document.getElementById('rotateHint');
-function checkOrientation(){
-  if(!isMobile()){rotateHint.style.display='none';return;}
-  const isPortrait=window.innerHeight>window.innerWidth;
-  const playing=game.state==='playing'||game.state==='paused';
-  rotateHint.style.display=(isPortrait&&playing)?'flex':'none';
-}
-window.addEventListener('resize',checkOrientation);
-window.addEventListener('orientationchange',()=>setTimeout(checkOrientation,250));
-function requestLandscape(){try{screen.orientation?.lock('landscape').catch(()=>{})}catch(e){}}
-function releaseLandscape(){try{screen.orientation?.unlock()}catch(e){}}
-
-// Joystick state
-const joy={active:false,id:-1,baseX:0,baseY:0,dx:0,dy:0,maxR:48};
-
-function showTouchControls(show){
-  const tc=document.getElementById('touchControls');
-  if(show)tc.classList.add('show');else tc.classList.remove('show');
-}
-
-// Joystick touch
-const joyZone=document.getElementById('joyZone');
-const joyInner=document.getElementById('joyInner');
-function getJoyRect(){return joyZone.getBoundingClientRect();}
-
-joyZone.addEventListener('touchstart',e=>{
-  e.preventDefault();
-  const t=e.changedTouches[0];
-  const r=getJoyRect();
-  joy.active=true;joy.id=t.identifier;
-  joy.baseX=r.left+r.width/2;joy.baseY=r.top+r.height/2;
-  updateJoy(t.clientX,t.clientY);
-},{passive:false});
-
-joyZone.addEventListener('touchmove',e=>{
-  e.preventDefault();
-  for(const t of e.changedTouches){
-    if(t.identifier===joy.id)updateJoy(t.clientX,t.clientY);
-  }
-},{passive:false});
-
-joyZone.addEventListener('touchend',e=>{
-  e.preventDefault();
-  for(const t of e.changedTouches){
-    if(t.identifier===joy.id){
-      joy.active=false;joy.dx=0;joy.dy=0;
-      joyInner.style.top='50%';joyInner.style.left='50%';
-      // release all directions
-      IN.up=false;IN.down=false;IN.left=false;IN.right=false;
-    }
-  }
-},{passive:false});
-
-function updateJoy(cx,cy){
-  let dx=cx-joy.baseX,dy=cy-joy.baseY;
-  const len=Math.hypot(dx,dy);
-  if(len>joy.maxR){dx=dx/len*joy.maxR;dy=dy/len*joy.maxR;}
-  joy.dx=dx/joy.maxR;joy.dy=dy/joy.maxR;
-  // position inner knob
-  const r=getJoyRect();
-  joyInner.style.left=(r.width/2+dx)+'px';
-  joyInner.style.top=(r.height/2+dy)+'px';
-  // update IN directions
-  const threshold=0.25;
-  IN.left=joy.dx<-threshold;IN.right=joy.dx>threshold;
-  IN.up=joy.dy<-threshold;IN.down=joy.dy>threshold;
-}
-
-// Aim: touches anywhere on the right half of the screen aim the player
-let aimTouchId=-1;
-const aimZone=document.getElementById('game');
-aimZone.addEventListener('touchstart',e=>{
-  for(const t of e.changedTouches){
-    const rx=t.clientX/window.innerWidth;
-    // Right 55% of screen = aim+shoot zone
-    if(rx>0.45&&aimTouchId===-1){
-      aimTouchId=t.identifier;
-      updateAim(t.clientX,t.clientY);
-      IN.shoot=true;
-      document.getElementById('btnShoot').classList.add('shooting');
-    }
-  }
-},{passive:true});
-aimZone.addEventListener('touchmove',e=>{
-  for(const t of e.changedTouches){
-    if(t.identifier===aimTouchId)updateAim(t.clientX,t.clientY);
-  }
-},{passive:true});
-aimZone.addEventListener('touchend',e=>{
-  for(const t of e.changedTouches){
-    if(t.identifier===aimTouchId){
-      aimTouchId=-1;IN.shoot=false;
-      document.getElementById('btnShoot').classList.remove('shooting');
-    }
-  }
-},{passive:true});
-function updateAim(cx,cy){
-  if(game.state!=='playing')return;
-  const r=GC.getBoundingClientRect();
-  IN.mx=cx-r.left;IN.my=cy-r.top;
-}
-
-// Action buttons
-document.getElementById('btnShoot').addEventListener('touchstart',e=>{
-  e.preventDefault();IN.shoot=true;
-  document.getElementById('btnShoot').classList.add('shooting');
-},{passive:false});
-document.getElementById('btnShoot').addEventListener('touchend',e=>{
-  e.preventDefault();IN.shoot=false;
-  document.getElementById('btnShoot').classList.remove('shooting');
-},{passive:false});
-document.getElementById('btnSuper').addEventListener('touchstart',e=>{
-  e.preventDefault();if(game.state==='playing')useSuper();
-},{passive:false});
-document.getElementById('btnGadget').addEventListener('touchstart',e=>{
-  e.preventDefault();if(game.state==='playing')activateGadget();
-},{passive:false});
-document.getElementById('btnPause').addEventListener('touchstart',e=>{
-  e.preventDefault();
-  if(game.state==='playing')pauseGame();else if(game.state==='paused')resumeGame();
-},{passive:false});
-
-// Update button visual state each frame
-const _origUpdateHudMobile=updateHud;
-updateHud=function(){
-  _origUpdateHudMobile();
-  if(!isMobile())return;
-  const p=pObj();if(!p)return;
-  // Super button glow when ready
-  const sb=document.getElementById('btnSuper');
-  if(p.supCharge>=p.supMax)sb.classList.add('ready');else sb.classList.remove('ready');
-  // Gadget button glow when ready
-  const gb=document.getElementById('btnGadget');
-  if(p.hasGadget&&p.gadgetCD<=0)gb.classList.add('ready');else gb.classList.remove('ready');
-  // Show gadget icon
-  const gd=gadgetDefs[p.bid];
-  if(gd)gb.textContent=gd.icon;
-};
-
-// Show/hide touch controls with match
-const _origStartMatchMobile=startMatch;
-startMatch=function(){
-  _origStartMatchMobile();
-  if(save.touchEnabled||isMobile()){showTouchControls(true);requestLandscape();}
-  setTimeout(checkOrientation,100);
-};
-const _origGoToMenuMobile=goToMenu;
-goToMenu=function(){
-  showTouchControls(false);
-  releaseLandscape();
-  rotateHint.style.display='none';
-  _origGoToMenuMobile();
-};
-
-// Touch toggle button
-const toggleBtn=document.getElementById('toggleTouchBtn');
-// Auto-enable on touch devices
-if(isMobile()&&save.touchEnabled==null)save.touchEnabled=true;
-if(save.touchEnabled==null)save.touchEnabled=false;
-toggleBtn.style.display='block';
-toggleBtn.textContent=`📱 Controles táctiles: ${save.touchEnabled?'ON':'OFF'}`;
-toggleBtn.className=save.touchEnabled?'nbtn bp':'nbtn';
-toggleBtn.addEventListener('click',()=>{
-  save.touchEnabled=!save.touchEnabled;persist();
-  toggleBtn.textContent=`📱 Controles táctiles: ${save.touchEnabled?'ON':'OFF'}`;
-  toggleBtn.className=save.touchEnabled?'nbtn bp':'nbtn';
-});
-
-// Prevent context menu and default touch behaviors on canvas
-GC.addEventListener('contextmenu',e=>e.preventDefault());
-document.addEventListener('touchmove',e=>{
-  if(e.target===GC||e.target===joyZone)e.preventDefault();
-},{passive:false});
-
-// Auto-detect on load
-if(isMobile()){
-  document.querySelectorAll('.abtn').forEach(b=>b.style.minWidth='56px');
-  document.querySelector('.helpbar') && (document.querySelector('.helpbar').style.display='none');
-}
-
-// ══ LEVEL / XP ══
-function renderLevel(){
-  const el=document.getElementById('mLevel');
-  if(el)el.textContent=save.level||1;
-}
+// ══ LEVEL ══
+function renderLevel(){const el=document.getElementById('mLevel');if(el)el.textContent=save.level||1;}
 
 // ══ MATCH HISTORY ══
 function renderHistory(){
   if(!save.matchHistory||!save.matchHistory.length){
-    document.getElementById('historyList').innerHTML=`<div class="panel" style="text-align:center;padding:20px;color:var(--muted)">Aún no has jugado ninguna partida.</div>`;
-    return;
+    document.getElementById('historyList').innerHTML=`<div class="panel" style="text-align:center;padding:28px"><div style="font-size:36px;margin-bottom:10px">📋</div><div style="font-family:var(--font);font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px">Sin partidas aún</div><div class="sm">Juega tu primera partida y aparecerán aquí tus últimos 5 resultados.</div></div>`;return;
   }
   const ago=ts=>{const s=Math.round((Date.now()-ts)/1000);if(s<60)return 'Hace '+s+'s';if(s<3600)return 'Hace '+Math.round(s/60)+'min';if(s<86400)return 'Hace '+Math.round(s/3600)+'h';return 'Hace '+Math.round(s/86400)+'d';};
-  document.getElementById('historyList').innerHTML=save.matchHistory.map((m,i)=>{
-    const bd=BD[m.brawler];
-    const sk=skinForB(m.brawler);
-    const placeColor=m.placement===1?'#ffd76a':m.placement<=3?'#60a5fa':'var(--muted)';
-    const placeIcon=m.placement===1?'🏆':m.placement===2?'🥈':m.placement===3?'🥉':'💀';
+  document.getElementById('historyList').innerHTML=save.matchHistory.map(m=>{
+    const bd=BD[m.brawler],sk=skinForB(m.brawler);
+    const pc=m.placement===1?'#ffd76a':m.placement<=3?'#60a5fa':'var(--muted)';
+    const pi=m.placement===1?'🏆':m.placement===2?'🥈':m.placement===3?'🥉':'💀';
     return`<div class="ic" style="display:flex;align-items:center;gap:14px;padding:12px 16px;flex-direction:row;text-align:left;${m.win?'border-color:rgba(255,215,106,.4)':''}">
       <div style="width:44px;height:44px;border-radius:50%;background:${sk.c};border:2px solid ${sk.s}44;flex-shrink:0"></div>
       <div style="flex:1;min-width:0">
-        <div style="font-family:var(--font);font-weight:700;font-size:13px">${bd?.name||m.brawler} ${m.win?'<span style="color:#ffd76a">— VICTORIA</span>':''}</div>
+        <div style="font-family:var(--font);font-weight:700;font-size:13px">${bd?.name||m.brawler}${m.win?' <span style="color:#ffd76a">— VICTORIA</span>':''}</div>
         <div class="sm" style="margin-top:3px">💀 ${m.kills} kills &nbsp;⚔️ ${m.dmg} daño &nbsp;🪙 +${m.coins} &nbsp;🏆 ${m.trophies>=0?'+':''}${m.trophies}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:22px;font-family:var(--font);font-weight:900;color:${placeColor}">${placeIcon} #${m.placement}</div>
+        <div style="font-size:22px;font-family:var(--font);font-weight:900;color:${pc}">${pi} #${m.placement}</div>
         <div class="sm" style="margin-top:2px">${ago(m.date)}</div>
       </div>
     </div>`;
   }).join('');
 }
 
-// ══ BRAWLER DETAILED STATS ══
+// ══ BRAWLER STATS ══
 function renderBrawlerStats(){
-  const owned=save.ownedBrawlers;
-  if(!owned.length){document.getElementById('brawlerStatsList').innerHTML='';return;}
-  document.getElementById('brawlerStatsList').innerHTML=owned.map(bid=>{
+  document.getElementById('brawlerStatsList').innerHTML=save.ownedBrawlers.map(bid=>{
     const bd=BD[bid];if(!bd)return'';
     const sk=skinForB(bid);
     const bs=save.brawlerStats?.[bid]||{matches:0,wins:0,kills:0,damage:0,best:{placement:10,kills:0,dmg:0}};
@@ -3291,85 +3344,96 @@ function renderBrawlerStats(){
     const kpg=bs.matches>0?(bs.kills/bs.matches).toFixed(1):0;
     const dpg=bs.matches>0?Math.round(bs.damage/bs.matches):0;
     const bt=(save.brawlerTrophies||{})[bid]||0;
-    return`<div class="ic">
+    const noData=bs.matches===0;
+    return`<div class="ic" style="${noData?'opacity:.6':''}">
       <div style="width:44px;height:44px;border-radius:50%;background:${sk.c};border:2px solid ${sk.s}44;margin-bottom:8px"></div>
       <div style="font-family:var(--font);font-weight:700;font-size:13px;margin-bottom:6px">${bd.name}</div>
+      ${noData?`<div class="sm" style="text-align:center;color:var(--muted);padding:6px 0">Sin partidas aún</div><div style="font-size:11px;color:var(--accent2);font-weight:700">🏆 ${bt} copas</div>`:`
       <div class="sm" style="text-align:left;display:flex;flex-direction:column;gap:3px">
         <div>🎮 <strong>${bs.matches}</strong> partidas &nbsp;🏆 <strong>${bs.wins}</strong> victorias</div>
         <div>📈 Win rate: <strong style="color:${wr>=50?'var(--good)':'#ff6060'}">${wr}%</strong></div>
-        <div>💀 <strong>${kpg}</strong> kills/partida &nbsp;⚔️ <strong>${dpg}</strong> daño/partida</div>
+        <div>💀 <strong>${kpg}</strong> kills/p &nbsp;⚔️ <strong>${dpg}</strong> daño/p</div>
         <div>🏆 <strong>${bt}</strong> copas</div>
-        ${bs.matches>0?`<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,.06)">Mejor: <strong>#${bs.best.placement}</strong> · <strong>${bs.best.kills}</strong> kills · <strong>${bs.best.dmg}</strong> daño</div>`:''}
-      </div>
+        <div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,.06)">Mejor: <strong>#${bs.best.placement}</strong> · <strong>${bs.best.kills}</strong> kills</div>
+      </div>`}
     </div>`;
   }).join('');
 }
 
-// ══ MENU ENTRANCE ANIMATION ══
-(function menuAnim(){
+// ══ MENU ANIMATION ══
+setTimeout(()=>{
   const card=document.querySelector('#mainMenu .mgrid');
   if(!card)return;
-  card.style.opacity='0';card.style.transform='translateY(28px)';
-  setTimeout(()=>{
-    card.style.transition='opacity .55s ease, transform .55s ease';
+  card.style.opacity='0';card.style.transform='translateY(24px)';
+  requestAnimationFrame(()=>{
+    card.style.transition='opacity .5s ease, transform .5s ease';
     card.style.opacity='1';card.style.transform='translateY(0)';
-  },80);
-})();
+  });
+},100);
 
-// ══ VICTORY SCREEN CONFETTI ══
+// ══ CONFETTI ══
 function launchConfetti(){
-  const canvas=document.createElement('canvas');
-  canvas.style.cssText='position:fixed;inset:0;z-index:150;pointer-events:none';
-  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
-  document.body.appendChild(canvas);
-  const ctx2=canvas.getContext('2d');
+  const cv=document.createElement('canvas');
+  cv.style.cssText='position:fixed;inset:0;z-index:150;pointer-events:none';
+  cv.width=window.innerWidth;cv.height=window.innerHeight;
+  document.body.appendChild(cv);
+  const cx2=cv.getContext('2d');
   const pieces=Array.from({length:90},()=>({
-    x:Math.random()*canvas.width,y:Math.random()*-canvas.height*.5,
+    x:Math.random()*cv.width,y:Math.random()*-cv.height*.5,
     vx:(Math.random()-.5)*3,vy:Math.random()*4+2,
     rot:Math.random()*360,vr:(Math.random()-.5)*8,
     w:Math.random()*10+6,h:Math.random()*6+4,
     col:['#ffd76a','#00e5a0','#c084fc','#60a5fa','#ff6ec7','#ff4060'][Math.floor(Math.random()*6)],
-    life:1
   }));
   let frame=0;
   function draw(){
-    ctx2.clearRect(0,0,canvas.width,canvas.height);
+    cx2.clearRect(0,0,cv.width,cv.height);
     let alive=false;
     for(const p of pieces){
       p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.vy+=.06;
-      if(p.y<canvas.height+20){alive=true;}
-      ctx2.save();ctx2.translate(p.x,p.y);ctx2.rotate(p.rot*Math.PI/180);
-      ctx2.globalAlpha=clamp(1-(p.y/canvas.height),0.1,1);
-      ctx2.fillStyle=p.col;ctx2.fillRect(-p.w/2,-p.h/2,p.w,p.h);
-      ctx2.restore();
+      if(p.y<cv.height+20)alive=true;
+      cx2.save();cx2.translate(p.x,p.y);cx2.rotate(p.rot*Math.PI/180);
+      cx2.globalAlpha=clamp(1-(p.y/cv.height),.1,1);
+      cx2.fillStyle=p.col;cx2.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      cx2.restore();
     }
-    if(alive&&frame<240){frame++;requestAnimationFrame(draw);}
-    else{canvas.remove();}
+    if(alive&&frame<240){frame++;requestAnimationFrame(draw);}else cv.remove();
   }
   draw();
 }
 
-// ══ HOOK CONFETTI INTO WIN ══
-const _origEndMatchAnim=endMatch;
+// ══ HOOK INTO endMatch ══
+const _origEndMatchAll=endMatch;
 endMatch=function(f=null){
-  _origEndMatchAnim(f);
-  // Check result after a tick
+  _origEndMatchAll(f);
   setTimeout(()=>{
-    const place=parseInt(document.getElementById('rPlace').textContent.replace('#',''));
-    if(place===1)launchConfetti();
-  },200);
+    const p=pObj();
+    const kills=p?.kills||0,dmg=Math.round(p?.totalDmg||0);
+    const placement=parseInt(document.getElementById('rPlace')?.textContent?.replace('#','')||'10');
+    // Confetti on win
+    if(placement===1)launchConfetti();
+    // XP bar on result screen
+    document.getElementById('rLevel').textContent=save.level;
+    document.getElementById('rXpGain').textContent=(({1:120,2:90,3:70,4:55,5:42,6:30,7:22,8:15,9:10,10:6}[placement]||6)+kills*8);
+    const needed=200+save.level*80;
+    setTimeout(()=>{
+      const bar=document.getElementById('rXpBar');if(bar)bar.style.width=Math.round((save.xp/needed)*100)+'%';
+    },400);
+  },250);
 };
 
-// ══ UPDATE renderAll WITH LEVEL ══
-const _origRenderAllStats=renderAll;
+// ══ UPDATE renderAll// ══ UPDATE renderAll WITH LEVEL ══
+const _origRenderAllFinal=renderAll;
 renderAll=function(){
-  _origRenderAllStats();
+  _origRenderAllFinal();
   renderLevel();
 };
 
-// ══ EVENT WIRING ══
-document.getElementById('openHistoryBtn').addEventListener('click',()=>{renderHistory();openScreen('historyScreen');});
-document.getElementById('openBrawlerStatsBtn').addEventListener('click',()=>{renderBrawlerStats();openScreen('brawlerStatsScreen');});
+// ══ EXPOSE FUNCTIONS FOR CROSS-SCRIPT ACCESS ══
+window._renderHistory=renderHistory;
+window._renderBrawlerStats=renderBrawlerStats;
+window._renderKeybindGrid=renderKeybindGrid;
+
 </script>
 </body>
 </html>
