@@ -350,6 +350,7 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
         <span class="curr">🪙 <span id="mCoins">200</span></span>
         <span class="curr">👾 <span id="mBrawlers">1</span></span>
         <span class="curr">🎨 <span id="mSkins">1</span></span>
+        <span class="curr">⭐ Nv.<span id="mLevel">1</span></span>
         <div class="drop-counter" id="dropCounterBtn">
           ⭐ StarrDrops
           <span class="badge" id="dropBadge" style="display:none">0</span>
@@ -383,6 +384,8 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
           <button class="nbtn" id="openShopBtn">🛒 Tienda</button>
           <button class="nbtn" id="openRanksBtn" style="grid-column:1/-1">🏅 Rangos de Brawler</button>
           <button class="nbtn" id="openUpgradeBtn" style="grid-column:1/-1">⬆️ Mejoras de Brawler</button>
+          <button class="nbtn" id="openHistoryBtn">📋 Historial</button>
+          <button class="nbtn" id="openBrawlerStatsBtn">📊 Stats por Brawler</button>
           <button class="nbtn" id="openSettingsBtn" style="grid-column:1/-1">⚙️ Configuración</button>
           <button class="nbtn" id="toggleTouchBtn" style="grid-column:1/-1;display:none">📱 Controles táctiles: OFF</button>
         </div>
@@ -466,7 +469,18 @@ button:disabled{opacity:.42;cursor:not-allowed;transform:none;filter:none}
       <div class="rstat"><div class="v" id="rDamage">0</div><div class="l">⚔️ <span data-t="damage">Daño</span></div></div>
       <div class="rstat"><div class="v" id="rCoins">0</div><div class="l">🪙 <span data-t="coins">Monedas</span></div></div>
     </div>
-    <div id="rUnlocks" style="margin-bottom:14px"></div>
+    <div id="rUnlocks" style="margin-bottom:10px"></div>
+    <!-- XP bar -->
+    <div id="rXpBlock" style="margin-bottom:14px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.08)">
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--font);font-weight:700;margin-bottom:6px">
+        <span>⭐ Nivel <span id="rLevel">1</span></span>
+        <span style="color:var(--accent2)">+<span id="rXpGain">0</span> XP</span>
+      </div>
+      <div style="height:7px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden">
+        <div id="rXpBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;width:0%;transition:width 1s ease"></div>
+      </div>
+      <div id="rLevelUp" style="display:none;text-align:center;margin-top:8px;font-family:var(--font);font-weight:900;font-size:14px;color:var(--accent2)">🎉 ¡NIVEL SUBIDO!</div>
+    </div>
     <div style="display:flex;justify-content:center;gap:10px">
       <button class="bp" id="playAgainBtn" style="padding:13px 26px;font-size:14px" data-t="playAgain">⚔️ Jugar de nuevo</button>
       <button class="bs" id="toMenuBtn" style="padding:13px 26px;font-size:14px" data-t="menu">🏠 Menú</button>
@@ -730,7 +744,11 @@ function defaultSave(){
     stats:{wins:0,matches:0,kills:0,damage:0},soundOn:true,
     brawlerTrophies:{nova:0},starrDrops:0,
     brawlerLevels:{},lang:'es',volume:.7,keybinds:{},touchEnabled:null,
-    shopSeed:0,shopLastReset:0};
+    shopSeed:0,shopLastReset:0,
+    xp:0,level:1,
+    matchHistory:[],
+    brawlerStats:{},
+  };
 }
 function loadSave(){
   try{const r=localStorage.getItem(SAVE_KEY);if(!r)return defaultSave();
@@ -909,7 +927,26 @@ function getDifficultyTier(totalTrophies){
 }
 
 // ═══════════════ ENTITY CREATION ═══════════════
-const BNAMES=['Bolt','Rex','Mira','Kira','Flux','Ares','Niko','Faye','Drift','Zeta','Orion','Blaze','Echo','Nova_X','Crypt','Hex'];
+// ── Bot personalities ──
+const BOT_TYPES=[
+  {name:'Ares',    style:'aggressive', engageRange:0.7, retreatHp:0.15, boxHunter:false},
+  {name:'Bolt',    style:'aggressive', engageRange:0.75,retreatHp:0.12, boxHunter:false},
+  {name:'Rex',     style:'balanced',   engageRange:1.0, retreatHp:0.30, boxHunter:true},
+  {name:'Mira',    style:'balanced',   engageRange:1.0, retreatHp:0.35, boxHunter:false},
+  {name:'Flux',    style:'defensive',  engageRange:1.3, retreatHp:0.50, boxHunter:false},
+  {name:'Niko',    style:'defensive',  engageRange:1.2, retreatHp:0.45, boxHunter:true},
+  {name:'Faye',    style:'farmer',     engageRange:1.1, retreatHp:0.40, boxHunter:true},
+  {name:'Drift',   style:'farmer',     engageRange:1.0, retreatHp:0.35, boxHunter:true},
+  {name:'Zeta',    style:'aggressive', engageRange:0.65,retreatHp:0.10, boxHunter:false},
+  {name:'Orion',   style:'balanced',   engageRange:0.95,retreatHp:0.28, boxHunter:false},
+  {name:'Echo',    style:'defensive',  engageRange:1.25,retreatHp:0.48, boxHunter:false},
+  {name:'Vex',     style:'aggressive', engageRange:0.7, retreatHp:0.18, boxHunter:false},
+  {name:'Lyra',    style:'balanced',   engageRange:1.0, retreatHp:0.32, boxHunter:true},
+  {name:'Kano',    style:'farmer',     engageRange:1.05,retreatHp:0.38, boxHunter:true},
+  {name:'Storm',   style:'aggressive', engageRange:0.68,retreatHp:0.14, boxHunter:false},
+  {name:'Jinx',    style:'defensive',  engageRange:1.3, retreatHp:0.52, boxHunter:false},
+];
+function randBotType(){return BOT_TYPES[Math.floor(Math.random()*BOT_TYPES.length)];}
 function spawnPos(ax,ay){
   // Each new fighter must be far from ALL existing fighters, not just the player
   for(let t=0;t<200;t++){
@@ -933,7 +970,8 @@ function createFighter(id,isPlayer,bid,x,y,diff){
   const d=BD[bid],sk=skinForB(bid);
   return{
     id,isPlayer,bid,skinId:sk.id,
-    name:isPlayer?d.name:BNAMES[Math.floor(Math.random()*BNAMES.length)],
+    name:isPlayer?d.name:randBotType().name,
+    botType:isPlayer?null:randBotType(),
     x,y,r:18,hp:d.hp,maxHp:d.hp,speed:d.speed,fireRate:d.fireRate,damage:d.damage,
     bSpeed:d.bSpeed,bLife:d.bLife,supCharge:0,supMax:d.supMax,supProj:d.supProj,
     shootCD:rand(.08,.4),gadgetCD:0,gadgetMax:(gadgetDefs[bid]?.cooldown||12),
@@ -1400,10 +1438,14 @@ function updateAI(bot,dt,now){
     botShootNearest(bot);applyRegen(bot,dt,now);return;
   }
   const hpPct=bot.hp/bot.maxHp;
+  const personality=bot.botType||{style:'balanced',engageRange:1.0,retreatHp:0.30,boxHunter:false};
+  const retreatThreshold=personality.retreatHp;
+  const engageMul=personality.engageRange;
+
   // Pickup seek — any type, keep attacking while going for it
-  const wantsHeal=hpPct<0.65;
+  const wantsHeal=hpPct<(0.65*engageMul);
   const wantsCharge=bot.supCharge<bot.supMax*.4;
-  const wantsPower=bot.powerLevel<4;
+  const wantsPower=bot.powerLevel<4&&personality.boxHunter;
   if(wantsHeal||wantsCharge||wantsPower){
     const pi=closestPickup(bot,wantsHeal);
     if(pi.pk&&pi.dist<320){
@@ -1439,9 +1481,9 @@ function updateAI(bot,dt,now){
     bot.facing=a;
     const vis=hasLOS(bot.x,bot.y,target.x,target.y)&&!hiddenFrom(bot,target);
     if(vis){
-      // Preferred engagement range by brawler type
-      const pMin=bot.atkType==='shotgun'?80:bot.atkType==='laser'||bot.atkType==='sniper'?240:130;
-      const pMax=bot.atkType==='shotgun'?190:bot.atkType==='laser'||bot.atkType==='sniper'?420:310;
+      // Preferred engagement range by brawler type + personality
+      const pMin=(bot.atkType==='shotgun'?80:bot.atkType==='laser'||bot.atkType==='sniper'?240:130)*engageMul;
+      const pMax=(bot.atkType==='shotgun'?190:bot.atkType==='laser'||bot.atkType==='sniper'?420:310)*engageMul;
       if(d>pMax){mx=Math.cos(a);my=Math.sin(a);}
       else if(d<pMin){mx=-Math.cos(a);my=-Math.sin(a);}
       else{const sd=Math.sin(bot.id.charCodeAt(3)+now*.8)>0?1:-1;mx=Math.cos(a+Math.PI/2*sd);my=Math.sin(a+Math.PI/2*sd);}
@@ -1884,6 +1926,35 @@ function endMatch(forced=null){
   }
   // ── streak bonus coins ──
   if(p&&p.killStreak>=3){const streakBonus=p.killStreak*21;save.coins+=streakBonus;addFeed(`🔥 ${currentLang==='en'?`Streak bonus: +🪙${streakBonus}`:`Bonus racha: +🪙${streakBonus}`}`);}
+  // ── XP & Level ──
+  const xpGain={1:120,2:90,3:70,4:55,5:42,6:30,7:22,8:15,9:10,10:6}[placement]||6;
+  const xpKillBonus=kills*8;
+  const xpTotal=xpGain+xpKillBonus;
+  if(!save.xp)save.xp=0;if(!save.level)save.level=1;
+  const xpBefore=save.xp;
+  save.xp+=xpTotal;
+  // XP needed per level = 200 + level*80
+  let leveledUp=false;
+  while(save.xp>=(200+save.level*80)){save.xp-=(200+save.level*80);save.level++;leveledUp=true;}
+
+  // ── Match history (last 5) ──
+  if(!save.matchHistory)save.matchHistory=[];
+  save.matchHistory.unshift({
+    brawler:bid,placement,kills,dmg,coins:totalCoins,
+    trophies:brawlerTd,date:Date.now(),win:placement===1
+  });
+  if(save.matchHistory.length>5)save.matchHistory=save.matchHistory.slice(0,5);
+
+  // ── Per-brawler detailed stats ──
+  if(!save.brawlerStats)save.brawlerStats={};
+  if(!save.brawlerStats[bid])save.brawlerStats[bid]={matches:0,wins:0,kills:0,damage:0,best:{placement:10,kills:0,dmg:0}};
+  const bs=save.brawlerStats[bid];
+  bs.matches++;if(placement===1)bs.wins++;
+  bs.kills+=kills;bs.damage+=dmg;
+  if(placement<bs.best.placement)bs.best.placement=placement;
+  if(kills>bs.best.kills)bs.best.kills=kills;
+  if(dmg>bs.best.dmg)bs.best.dmg=dmg;
+
   const unlocks=claimAvailableRoad();persist();
   document.getElementById('hud').classList.remove('show');document.getElementById('zoneBadge').classList.remove('on');
   game.state='results';hideScreens();openScreen('resultScreen');
@@ -1895,9 +1966,13 @@ function endMatch(forced=null){
   document.getElementById('rCoins').textContent='+'+totalCoins;
   const dropLine=gotDrop?`<div class="sm" style="color:var(--accent2);margin-top:6px">⭐ +1 ${T('starrDrops')}</div>`:'';
   document.getElementById('rUnlocks').innerHTML=(unlocks.length?`<div class="panel" style="text-align:left"><strong style="color:var(--accent2)">🎁 ${T('newRewards')}:</strong><br><span class="sm">${unlocks.join(' · ')}</span></div>`:'')+dropLine;
-  // Translate result buttons
-  document.getElementById('playAgainBtn').textContent=T('playAgain');
-  document.getElementById('toMenuBtn').textContent=T('menu');
+  document.getElementById('rLevel').textContent=save.level;
+  document.getElementById('rXpGain').textContent=xpTotal;
+  setTimeout(()=>{
+    const needed=200+save.level*80;
+    document.getElementById('rXpBar').style.width=Math.round((save.xp/needed)*100)+'%';
+    if(leveledUp){document.getElementById('rLevelUp').style.display='block';}
+  },400);
   renderAll();
 }
 
@@ -2059,6 +2134,7 @@ function renderAll(){
   document.getElementById('mMatches').textContent=save.stats.matches||0;
   document.getElementById('mKills').textContent=save.stats.kills||0;
   document.getElementById('mDamage').textContent=save.stats.damage||0;
+  if(document.getElementById('mLevel'))document.getElementById('mLevel').textContent=save.level||1;
   renderSelectedPreview();renderBrawlers();renderShop();renderCustom();renderRoad();
 }
 
@@ -2800,6 +2876,22 @@ if(!save.brawlerLevels)save.brawlerLevels={};
 save.ownedBrawlers.forEach(b=>{if(!save.brawlerLevels[b])save.brawlerLevels[b]=1;});
 persist();
 </script>
+<!-- MATCH HISTORY SCREEN -->
+<div id="historyScreen" class="screen">
+  <div class="card" style="width:min(700px,97vw)">
+    <div class="stb"><h2>📋 Historial de partidas</h2><button class="bs closeScreenBtn" data-close="historyScreen">✕</button></div>
+    <div id="historyList" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<!-- BRAWLER STATS SCREEN -->
+<div id="brawlerStatsScreen" class="screen">
+  <div class="card" style="width:min(820px,97vw)">
+    <div class="stb"><h2>📊 Estadísticas por Brawler</h2><button class="bs closeScreenBtn" data-close="brawlerStatsScreen">✕</button></div>
+    <div class="g4" id="brawlerStatsList"></div>
+  </div>
+</div>
+
 <!-- SETTINGS SCREEN -->
 <div id="settingsScreen" class="screen">
   <div class="card" style="width:min(820px,97vw)">
@@ -3151,11 +3243,133 @@ document.addEventListener('touchmove',e=>{
 
 // Auto-detect on load
 if(isMobile()){
-  // Increase button sizes for small phones
   document.querySelectorAll('.abtn').forEach(b=>b.style.minWidth='56px');
-  // Hide keyboard hint
   document.querySelector('.helpbar') && (document.querySelector('.helpbar').style.display='none');
 }
+
+// ══ LEVEL / XP ══
+function renderLevel(){
+  const el=document.getElementById('mLevel');
+  if(el)el.textContent=save.level||1;
+}
+
+// ══ MATCH HISTORY ══
+function renderHistory(){
+  if(!save.matchHistory||!save.matchHistory.length){
+    document.getElementById('historyList').innerHTML=`<div class="panel" style="text-align:center;padding:20px;color:var(--muted)">Aún no has jugado ninguna partida.</div>`;
+    return;
+  }
+  const ago=ts=>{const s=Math.round((Date.now()-ts)/1000);if(s<60)return 'Hace '+s+'s';if(s<3600)return 'Hace '+Math.round(s/60)+'min';if(s<86400)return 'Hace '+Math.round(s/3600)+'h';return 'Hace '+Math.round(s/86400)+'d';};
+  document.getElementById('historyList').innerHTML=save.matchHistory.map((m,i)=>{
+    const bd=BD[m.brawler];
+    const sk=skinForB(m.brawler);
+    const placeColor=m.placement===1?'#ffd76a':m.placement<=3?'#60a5fa':'var(--muted)';
+    const placeIcon=m.placement===1?'🏆':m.placement===2?'🥈':m.placement===3?'🥉':'💀';
+    return`<div class="ic" style="display:flex;align-items:center;gap:14px;padding:12px 16px;flex-direction:row;text-align:left;${m.win?'border-color:rgba(255,215,106,.4)':''}">
+      <div style="width:44px;height:44px;border-radius:50%;background:${sk.c};border:2px solid ${sk.s}44;flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--font);font-weight:700;font-size:13px">${bd?.name||m.brawler} ${m.win?'<span style="color:#ffd76a">— VICTORIA</span>':''}</div>
+        <div class="sm" style="margin-top:3px">💀 ${m.kills} kills &nbsp;⚔️ ${m.dmg} daño &nbsp;🪙 +${m.coins} &nbsp;🏆 ${m.trophies>=0?'+':''}${m.trophies}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:22px;font-family:var(--font);font-weight:900;color:${placeColor}">${placeIcon} #${m.placement}</div>
+        <div class="sm" style="margin-top:2px">${ago(m.date)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══ BRAWLER DETAILED STATS ══
+function renderBrawlerStats(){
+  const owned=save.ownedBrawlers;
+  if(!owned.length){document.getElementById('brawlerStatsList').innerHTML='';return;}
+  document.getElementById('brawlerStatsList').innerHTML=owned.map(bid=>{
+    const bd=BD[bid];if(!bd)return'';
+    const sk=skinForB(bid);
+    const bs=save.brawlerStats?.[bid]||{matches:0,wins:0,kills:0,damage:0,best:{placement:10,kills:0,dmg:0}};
+    const wr=bs.matches>0?Math.round(bs.wins/bs.matches*100):0;
+    const kpg=bs.matches>0?(bs.kills/bs.matches).toFixed(1):0;
+    const dpg=bs.matches>0?Math.round(bs.damage/bs.matches):0;
+    const bt=(save.brawlerTrophies||{})[bid]||0;
+    return`<div class="ic">
+      <div style="width:44px;height:44px;border-radius:50%;background:${sk.c};border:2px solid ${sk.s}44;margin-bottom:8px"></div>
+      <div style="font-family:var(--font);font-weight:700;font-size:13px;margin-bottom:6px">${bd.name}</div>
+      <div class="sm" style="text-align:left;display:flex;flex-direction:column;gap:3px">
+        <div>🎮 <strong>${bs.matches}</strong> partidas &nbsp;🏆 <strong>${bs.wins}</strong> victorias</div>
+        <div>📈 Win rate: <strong style="color:${wr>=50?'var(--good)':'#ff6060'}">${wr}%</strong></div>
+        <div>💀 <strong>${kpg}</strong> kills/partida &nbsp;⚔️ <strong>${dpg}</strong> daño/partida</div>
+        <div>🏆 <strong>${bt}</strong> copas</div>
+        ${bs.matches>0?`<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,.06)">Mejor: <strong>#${bs.best.placement}</strong> · <strong>${bs.best.kills}</strong> kills · <strong>${bs.best.dmg}</strong> daño</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══ MENU ENTRANCE ANIMATION ══
+(function menuAnim(){
+  const card=document.querySelector('#mainMenu .mgrid');
+  if(!card)return;
+  card.style.opacity='0';card.style.transform='translateY(28px)';
+  setTimeout(()=>{
+    card.style.transition='opacity .55s ease, transform .55s ease';
+    card.style.opacity='1';card.style.transform='translateY(0)';
+  },80);
+})();
+
+// ══ VICTORY SCREEN CONFETTI ══
+function launchConfetti(){
+  const canvas=document.createElement('canvas');
+  canvas.style.cssText='position:fixed;inset:0;z-index:150;pointer-events:none';
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx2=canvas.getContext('2d');
+  const pieces=Array.from({length:90},()=>({
+    x:Math.random()*canvas.width,y:Math.random()*-canvas.height*.5,
+    vx:(Math.random()-.5)*3,vy:Math.random()*4+2,
+    rot:Math.random()*360,vr:(Math.random()-.5)*8,
+    w:Math.random()*10+6,h:Math.random()*6+4,
+    col:['#ffd76a','#00e5a0','#c084fc','#60a5fa','#ff6ec7','#ff4060'][Math.floor(Math.random()*6)],
+    life:1
+  }));
+  let frame=0;
+  function draw(){
+    ctx2.clearRect(0,0,canvas.width,canvas.height);
+    let alive=false;
+    for(const p of pieces){
+      p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.vy+=.06;
+      if(p.y<canvas.height+20){alive=true;}
+      ctx2.save();ctx2.translate(p.x,p.y);ctx2.rotate(p.rot*Math.PI/180);
+      ctx2.globalAlpha=clamp(1-(p.y/canvas.height),0.1,1);
+      ctx2.fillStyle=p.col;ctx2.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx2.restore();
+    }
+    if(alive&&frame<240){frame++;requestAnimationFrame(draw);}
+    else{canvas.remove();}
+  }
+  draw();
+}
+
+// ══ HOOK CONFETTI INTO WIN ══
+const _origEndMatchAnim=endMatch;
+endMatch=function(f=null){
+  _origEndMatchAnim(f);
+  // Check result after a tick
+  setTimeout(()=>{
+    const place=parseInt(document.getElementById('rPlace').textContent.replace('#',''));
+    if(place===1)launchConfetti();
+  },200);
+};
+
+// ══ UPDATE renderAll WITH LEVEL ══
+const _origRenderAllStats=renderAll;
+renderAll=function(){
+  _origRenderAllStats();
+  renderLevel();
+};
+
+// ══ EVENT WIRING ══
+document.getElementById('openHistoryBtn').addEventListener('click',()=>{renderHistory();openScreen('historyScreen');});
+document.getElementById('openBrawlerStatsBtn').addEventListener('click',()=>{renderBrawlerStats();openScreen('brawlerStatsScreen');});
 </script>
 </body>
 </html>
