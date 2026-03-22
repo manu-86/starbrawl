@@ -1199,8 +1199,8 @@ function defeatFighter(v,k){
   if(k)addFeed(`💀 ${k.name} → ${v.name}`);
   if(v.isPlayer){playSound('death');endMatch(placement);return;}
   playSound('death');
-  if(v.powerLevel>0)game.pickups.push({x:v.x,y:v.y,r:13,type:'power',amt:v.powerLevel});
-  else if(Math.random()<.33)game.pickups.push({x:v.x,y:v.y,r:13,type:Math.random()<.55?'heal':'charge'});
+  if(v.powerLevel>0)game.pickups.push({x:v.x,y:v.y,r:14,type:'power',amt:v.powerLevel});
+  else game.pickups.push({x:v.x,y:v.y,r:14,type:'power',amt:1});
   if(aliveCount()===1){const w=game.fighters.find(f=>!f.dead);if(w)registerP(w,1);const p=pObj();endMatch(p&&!p.dead?1:(p?.finalPlacement||2));}
 }
 
