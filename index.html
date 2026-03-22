@@ -842,34 +842,33 @@ function skinForB(bid){const s=save.selSkins[bid];return SD[s]||Object.values(SD
 // ═══════════════ MAP ═══════════════
 function createWalls(){
   // ── Tile-grid map: world 2400×1800, tile size 120×120 = 20×15 grid ──
-  // T=wall, B=bush, X=box, .=empty  (each cell = 120×120px, objects centred in cell)
+  // T=wall, B=bush, X=box, .=empty
   const TW=120,TH=120,COLS=20,ROWS=15;
   const MAP=[
     'T..T....T...T....T.T',
-    '..B.B...B...B.B...B.',
+    '..B.B.X.B...B.B.X.B.',
     'T...T......T...T...T',
-    '.B.....X.....X....B.',
-    '..T..X....X....T..T.',
-    '.....B..T..B........',
-    'T.X....B...B....X.T.',
-    '....T.......T.......',
-    '.B..X..T.T..X..B...',
-    '.....B.....B........',
-    'T...T...X...T...T...',
-    '..B....X.X....B.....',
-    'T..T.......T..T....T',
-    '.B...B...B...B...B..',
+    '.B..X..........X..B.',
+    '..T....X....X...T...',
+    '.X...B..T..B...X....',
+    'T..X...B...B...X.T..',
+    '....T....X...T......',
+    '.B.X...T.T...X.B....',
+    '.X...B.....B...X....',
+    'T...T....X..T...T...',
+    '..B.X......X..B.....',
+    'T..T....X....T..T..T',
+    '.B.X.B.....B.B.X.B..',
     'T..T....T...T....T.T',
   ];
   game.walls=[];game.bushes=[];game.boxes=[];
-  // Track occupied cells to avoid overlaps
   const occupied=new Set();
   const key=(c,r)=>`${c},${r}`;
   for(let r=0;r<ROWS;r++){
     const row=MAP[r]||'';
-    for(let c=0;c<COLS;c++){
-      const ch=row[c]||'.';
-      const px=c*TW, py=r*TH;
+    for(let c=0;c<Math.min(COLS,row.length);c++){
+      const ch=row[c];
+      const px=c*TW,py=r*TH;
       if(ch==='T'){
         game.walls.push({x:px+8,y:py+8,w:TW-16,h:TH-16});
         occupied.add(key(c,r));
@@ -877,21 +876,12 @@ function createWalls(){
         game.bushes.push({x:px+4,y:py+4,w:TW-8,h:TH-8});
         occupied.add(key(c,r));
       }else if(ch==='X'){
-        // Only place box if not overlapping a wall in nearby cells
         const clear=[[-1,0],[1,0],[0,-1],[0,1],[0,0]].every(([dc,dr])=>!occupied.has(key(c+dc,r+dr)));
         if(clear){
-          game.boxes.push({x:px+38,y:py+38,w:44,h:44,hp:90,maxHp:90});
+          game.boxes.push({x:px+38,y:py+38,w:44,h:44,hp:80,maxHp:80});
           occupied.add(key(c,r));
         }
       }
-    }
-  }
-  // Add a few extra boxes in open areas verified clear of walls
-  const extraBoxCells=[[3,6],[8,2],[14,6],[17,9],[5,12],[10,7],[16,3],[2,10],[12,4],[18,12]];
-  for(const [c,r] of extraBoxCells){
-    if(!occupied.has(key(c,r))){
-      const clear=[[-1,0],[1,0],[0,-1],[0,1]].every(([dc,dr])=>!occupied.has(key(c+dc,r+dr)));
-      if(clear){game.boxes.push({x:c*TW+38,y:r*TH+38,w:44,h:44,hp:90,maxHp:90});occupied.add(key(c,r));}
     }
   }
 }
@@ -1227,7 +1217,7 @@ function processBullets(dt,now){
       const box=game.boxes[bi];
       if(b.x>=box.x&&b.x<=box.x+box.w&&b.y>=box.y&&b.y<=box.y+box.h){
         box.hp-=b.damage;burst(b.x,b.y,'#ffd76a',5);
-        if(box.hp<=0){const o=game.fighters.find(x=>x.id===b.ownerId);if(o)applyPowerCube(o);burst(box.x+22,box.y+22,'#74ff7e',24);game.boxes.splice(bi,1);}
+        if(box.hp<=0){burst(box.x+22,box.y+22,'#74ff7e',24);game.pickups.push({x:box.x+22,y:box.y+22,r:14,type:'power',amt:1});game.boxes.splice(bi,1);}
         if(b.explosive){const o=game.fighters.find(x=>x.id===b.ownerId);if(o)explode(b.x,b.y,b.expR,o);}
         rm=true;break;
       }
@@ -1276,7 +1266,7 @@ function explode(x,y,r,owner){
       if(actualDmg>0){f.hp-=actualDmg;f.lastDamagedT=performance.now()/1000;owner.totalDmg+=actualDmg;spawnDmg(f.x,f.y,'💥','#ffb06a');if(f.isPlayer)shake(5,.3);if(f.hp<=0)defeatFighter(f,owner);}
     }
   }
-  for(let i=game.boxes.length-1;i>=0;i--){const b=game.boxes[i],cx=b.x+22,cy=b.y+22;if(dist(x,y,cx,cy)<r+26){b.hp-=owner.damage*.8;if(b.hp<=0){applyPowerCube(owner);game.boxes.splice(i,1);}}}
+  for(let i=game.boxes.length-1;i>=0;i--){const b=game.boxes[i],cx=b.x+22,cy=b.y+22;if(dist(x,y,cx,cy)<r+26){b.hp-=owner.damage*.8;if(b.hp<=0){burst(cx,cy,'#74ff7e',24);game.pickups.push({x:cx,y:cy,r:14,type:'power',amt:1});game.boxes.splice(i,1);}}}
 }
 function applyPowerCube(f,a=1){f.powerLevel+=a;f.maxHp+=18*a;f.hp=Math.min(f.maxHp,f.hp+18*a);f.damage+=2.5*a;burst(f.x,f.y,'#74ff7e',16);if(f.isPlayer){addFeed(`📦 Poder ${f.powerLevel}`);shake(2,.1);}}
 
@@ -1312,7 +1302,7 @@ function processPickups(){
       if(f.dead)continue;if(dist(p.x,p.y,f.x,f.y)<p.r+f.r){
         if(p.type==='heal'){f.hp=clamp(f.hp+f.maxHp*.3,0,f.maxHp);burst(p.x,p.y,'#87f2c7',14);if(f.isPlayer){addFeed(currentLang==='en'?'💚 Healed':'💚 Curación');playSound('pickup');}}
         else if(p.type==='charge'){f.supCharge=clamp(f.supCharge+52,0,f.supMax);burst(p.x,p.y,'#ffd76a',14);if(f.isPlayer){addFeed(currentLang==='en'?'⚡ Super charged':'⚡ Carga súper');playSound('pickup');}}
-        else if(p.type==='power')applyPowerCube(f,p.amt||1);
+        else if(p.type==='power'){applyPowerCube(f,p.amt||1);if(f.isPlayer){addFeed(`📦 ¡Cubo de poder! Nivel ${f.powerLevel}`);playSound('pickup');}}
         game.pickups.splice(i,1);break;
       }
     }
@@ -1702,11 +1692,29 @@ function drawHazards(){
 function drawPickups(){
   const now=performance.now()/1000;
   for(const p of game.pickups){
-    const br=p.r+Math.sin(now*3+p.x)*.5*3;
-    ctx.beginPath();ctx.arc(p.x,p.y,br,0,Math.PI*2);
-    ctx.fillStyle=p.type==='heal'?'#87f2c7':p.type==='charge'?'#ffd76a':'#74ff7e';ctx.fill();
-    ctx.fillStyle='#1d233d';ctx.font='bold 13px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(p.type==='heal'?'♥':p.type==='charge'?'⚡':'★',p.x,p.y+1);
+    if(p.type==='power'){
+      // Draw as a glowing green cube/box
+      const pulse=Math.sin(now*4+p.x)*.5+.5;
+      const sz=13+pulse*3;
+      ctx.save();
+      ctx.translate(p.x,p.y);ctx.rotate(now*.8+p.x);
+      // glow
+      ctx.shadowColor='#74ff7e';ctx.shadowBlur=12+pulse*8;
+      ctx.fillStyle=`rgba(116,255,126,${.7+pulse*.3})`;
+      ctx.fillRect(-sz/2,-sz/2,sz,sz);
+      ctx.shadowBlur=0;
+      // inner icon
+      ctx.fillStyle='#1d233d';ctx.font=`bold ${Math.round(sz*.75)}px Arial`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('★',0,1);
+      ctx.restore();
+    }else{
+      const br=p.r+Math.sin(now*3+p.x)*1.5;
+      ctx.beginPath();ctx.arc(p.x,p.y,br,0,Math.PI*2);
+      ctx.fillStyle=p.type==='heal'?'#87f2c7':'#ffd76a';ctx.fill();
+      ctx.fillStyle='#1d233d';ctx.font='bold 13px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(p.type==='heal'?'♥':'⚡',p.x,p.y+1);
+    }
   }
   ctx.textBaseline='alphabetic';
 }
