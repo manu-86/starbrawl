@@ -857,46 +857,50 @@ function skinForB(bid){const s=save.selSkins[bid];return SD[s]||Object.values(SD
 
 // ═══════════════ MAP ═══════════════
 function createWalls(){
-  // ── Tile-grid map: world 2400×1800, tile size 120×120 = 20×15 grid ──
-  // T=wall, B=bush, X=box, .=empty
+  // ── Tile-grid map: world 2400×1800, tile 120×120, 20 cols × 15 filas ──
+  // T=pared  B=arbusto  X=caja  .=vacío  S=spawn (jugador y bots, aleatorio)
   const TW=120,TH=120,COLS=20,ROWS=15;
   const MAP=[
-    'T..T....T...T....T.T',
-    '..B.B.X.B...B.B.X.B.',
-    'T...T......T...T...T',
-    '.B..X..........X..B.',
-    '..T....X....X...T...',
-    '.X...B..T..B...X....',
-    'T..X...B...B...X.T..',
-    '....T....X...T......',
-    '.B.X...T.T...X.B....',
-    '.X...B.....B...X....',
-    'T...T....X..T...T...',
-    '..B.X......X..B.....',
-    'T..T....X....T..T..T',
-    '.B.X.B.....B.B.X.B..',
-    'T..T....T...T....T.T',
+    'BBBBBBBBBBBBBBBBBBBB',
+    'BBBXS....TT...S..BBB',
+    'BB......T........XBB',
+    'BTB.......BXX......B',
+    'BT...S..X....TTT...B',
+    'B.....X......TTT...B',
+    'B..S....BBB.....S..B',
+    'B....BX.BX..X..X...B',
+    'B......TT......X...B',
+    'B..S...TT.BB.......B',
+    'BX.X.....BBX.X..SX.B',
+    'B.S.....TTT...X....B',
+    'BBX.....T..X.....XBB',
+    'BBB.S....TT...S..BBB',
+    'BBBBBBBBBBBBBBBBBBBB',
   ];
   game.walls=[];game.bushes=[];game.boxes=[];
+  game.spawnPoints=[];
   const occupied=new Set();
   const key=(c,r)=>`${c},${r}`;
   for(let r=0;r<ROWS;r++){
     const row=MAP[r]||'';
     for(let c=0;c<Math.min(COLS,row.length);c++){
       const ch=row[c];
-      const px=c*TW,py=r*TH;
+      const cx=c*TW+TW/2, cy=r*TH+TH/2;
       if(ch==='T'){
-        game.walls.push({x:px+8,y:py+8,w:TW-16,h:TH-16});
+        game.walls.push({x:c*TW+8,y:r*TH+8,w:TW-16,h:TH-16});
         occupied.add(key(c,r));
       }else if(ch==='B'){
-        game.bushes.push({x:px+4,y:py+4,w:TW-8,h:TH-8});
+        game.bushes.push({x:c*TW+4,y:r*TH+4,w:TW-8,h:TH-8});
         occupied.add(key(c,r));
       }else if(ch==='X'){
         const clear=[[-1,0],[1,0],[0,-1],[0,1],[0,0]].every(([dc,dr])=>!occupied.has(key(c+dc,r+dr)));
         if(clear){
-          game.boxes.push({x:px+38,y:py+38,w:44,h:44,hp:150,maxHp:150});
+          game.boxes.push({x:c*TW+34,y:r*TH+34,w:52,h:52,hp:150,maxHp:150});
           occupied.add(key(c,r));
         }
+      }else if(ch==='S'){
+        // Spawn compartido — jugador y bots aparecen aquí aleatoriamente
+        game.spawnPoints.push({x:cx,y:cy,used:false});
       }
     }
   }
@@ -948,21 +952,28 @@ const BOT_TYPES=[
   {name:'Jinx',    style:'defensive',  engageRange:1.3, retreatHp:0.52, boxHunter:false},
 ];
 function randBotType(){return BOT_TYPES[Math.floor(Math.random()*BOT_TYPES.length)];}
-function spawnPos(ax,ay){
-  // Each new fighter must be far from ALL existing fighters, not just the player
+function spawnPos(){
+  // Use map-defined S spawns — pick an unused one at random
+  const pool=game.spawnPoints||[];
+  if(pool.length){
+    const available=pool.filter(s=>!s.used);
+    if(available.length){
+      const sp=available[Math.floor(Math.random()*available.length)];
+      sp.used=true;
+      return{x:sp.x,y:sp.y};
+    }
+    // All used — reset and try again
+    pool.forEach(s=>s.used=false);
+    const sp=pool[Math.floor(Math.random()*pool.length)];
+    sp.used=true;
+    return{x:sp.x,y:sp.y};
+  }
+  // No defined spawns — random placement
   for(let t=0;t<200;t++){
     const x=rand(120,game.world.w-120),y=rand(120,game.world.h-120);
-    if(ax!=null&&dist(x,y,ax,ay)<500)continue; // far from player
     if(game.walls.some(w=>circleRect(x,y,28,w)))continue;
-    if(game.fighters.some(f=>!f.dead&&dist(x,y,f.x,f.y)<320))continue; // far from ALL fighters
-    if(game.bushes.some(b=>circleRect(x,y,20,b)))continue; // don't spawn inside bushes
-    return{x,y};
-  }
-  // fallback with relaxed constraints
-  for(let t=0;t<100;t++){
-    const x=rand(120,game.world.w-120),y=rand(120,game.world.h-120);
-    if(game.walls.some(w=>circleRect(x,y,28,w)))continue;
-    if(game.fighters.some(f=>!f.dead&&dist(x,y,f.x,f.y)<180))continue;
+    if(game.fighters.some(f=>!f.dead&&dist(x,y,f.x,f.y)<320))continue;
+    if(game.bushes.some(b=>circleRect(x,y,20,b)))continue;
     return{x,y};
   }
   return{x:rand(120,game.world.w-120),y:rand(120,game.world.h-120)};
@@ -995,14 +1006,14 @@ function startMatch(){
   game.feed=[];game.placements=[];game.matchEnded=false;DMG.length=0;
   game.gas={active:false,timer:0,delay:38,dtick:0,devery:.45,radius:0,targetR:0,cx:0,cy:0,rate:0,dmg:3,phase:0,warned:false};
   const diff=getDifficultyTier(save.trophies);
-  const ppos=spawnPos(null,null);
+  const ppos=spawnPos();
   const player=createFighter('player',true,save.selBrawler,ppos.x,ppos.y,null);
   player.skinId=save.selSkins[save.selBrawler]||`${save.selBrawler}_classic`;
   player.hasGadget=save.ownedGadgets.includes(save.selBrawler);
   game.fighters.push(player);game.playerId=player.id;
   for(let i=0;i<9;i++){
     const pool=Object.keys(BD),bid=pool[Math.floor(Math.random()*pool.length)];
-    const pos=spawnPos(ppos.x,ppos.y);
+    const pos=spawnPos();
     const bot=createFighter('bot'+i,false,bid,pos.x,pos.y,diff);
     const skins=Object.values(SD).filter(s=>s.b===bid);
     bot.skinId=skins[Math.floor(Math.random()*skins.length)].id;
@@ -1690,10 +1701,19 @@ function updateHud(){
 
 // ═══════════════ DRAWING ═══════════════
 function drawGrid(){
-  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
-  const sz=80,sx=Math.floor(game.cx/sz)*sz,sy=Math.floor(game.cy/sz)*sz;
-  for(let x=sx;x<game.cx+GC.width+sz;x+=sz){ctx.beginPath();ctx.moveTo(x-game.cx,0);ctx.lineTo(x-game.cx,GC.height);ctx.stroke();}
-  for(let y=sy;y<game.cy+GC.height+sz;y+=sz){ctx.beginPath();ctx.moveTo(0,y-game.cy);ctx.lineTo(GC.width,y-game.cy);ctx.stroke();}
+  // Floor tiles — subtle checkerboard stone pattern
+  const TW=120,TH=120;
+  const sx=Math.floor(game.cx/TW)*TW, sy=Math.floor(game.cy/TH)*TH;
+  for(let x=sx;x<game.cx+GC.width+TW;x+=TW){
+    for(let y=sy;y<game.cy+GC.height+TH;y+=TH){
+      const px=x-game.cx, py=y-game.cy;
+      const even=((Math.round(x/TW))+(Math.round(y/TH)))%2===0;
+      ctx.fillStyle=even?'rgba(255,255,255,.022)':'rgba(0,0,0,.07)';
+      ctx.fillRect(px,py,TW,TH);
+      ctx.strokeStyle='rgba(255,255,255,.028)';ctx.lineWidth=1;
+      ctx.strokeRect(px+.5,py+.5,TW-1,TH-1);
+    }
+  }
 }
 function drawHpBar(x,y,w,h,v,m,col){
   ctx.fillStyle='rgba(0,0,0,.4)';ctx.fillRect(x-w/2,y,w,h);
@@ -1810,22 +1830,75 @@ function drawBrawlerBody(ctx2, f, now){
 }
 
 function drawBushes(){
+  const now=performance.now()/1000;
   for(const b of game.bushes){
-    ctx.fillStyle='rgba(20,95,45,.94)';ctx.fillRect(b.x,b.y,b.w,b.h);
-    for(let x=b.x+10;x<b.x+b.w;x+=25)for(let y=b.y+10;y<b.y+b.h;y+=22){
-      ctx.fillStyle='rgba(45,150,78,.6)';ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fill();
+    // Base ground — dark green fill
+    ctx.fillStyle='rgba(12,58,28,.96)';ctx.fillRect(b.x,b.y,b.w,b.h);
+    // Inner lighter patch
+    ctx.fillStyle='rgba(18,80,38,.7)';ctx.fillRect(b.x+6,b.y+6,b.w-12,b.h-12);
+    // Bush clusters — 3 sizes for depth
+    const cx=b.x+b.w/2,cy=b.y+b.h/2;
+    // Back layer (darker, larger)
+    for(let i=0;i<6;i++){
+      const bx=b.x+14+((i*37)%(b.w-28)),by=b.y+14+((i*29)%(b.h-28));
+      ctx.fillStyle='rgba(20,90,40,.85)';
+      ctx.beginPath();ctx.arc(bx,by,11,0,Math.PI*2);ctx.fill();
     }
+    // Middle layer
+    for(let i=0;i<8;i++){
+      const bx=b.x+10+((i*31+7)%(b.w-20)),by=b.y+10+((i*23+5)%(b.h-20));
+      ctx.fillStyle='rgba(35,120,55,.75)';
+      ctx.beginPath();ctx.arc(bx,by,8,0,Math.PI*2);ctx.fill();
+    }
+    // Front highlight layer (bright, small)
+    for(let i=0;i<5;i++){
+      const bx=b.x+16+((i*43+12)%(b.w-32)),by=b.y+16+((i*37+8)%(b.h-32));
+      const pulse=0.6+Math.sin(now*1.2+i*1.4)*0.1;
+      ctx.fillStyle=`rgba(60,175,80,${pulse})`;
+      ctx.beginPath();ctx.arc(bx,by,5,0,Math.PI*2);ctx.fill();
+    }
+    // Subtle border
+    ctx.strokeStyle='rgba(30,100,50,.5)';ctx.lineWidth=1.5;
+    ctx.strokeRect(b.x+1,b.y+1,b.w-2,b.h-2);
   }
 }
 function drawBoxes(){
+  const now=performance.now()/1000;
   for(const b of game.boxes){
-    ctx.fillStyle='#6a4820';ctx.fillRect(b.x,b.y,b.w,b.h);
-    ctx.strokeStyle='rgba(255,195,60,.2)';ctx.lineWidth=1.5;ctx.strokeRect(b.x,b.y,b.w,b.h);
-    ctx.fillStyle='#ffd76a';ctx.font='bold 15px Arial';ctx.textAlign='center';ctx.fillText('+',b.x+22,b.y+27);
-    drawHpBar(b.x+22,b.y-8,36,5,b.hp,b.maxHp,'#ffd76a');
-    ctx.fillStyle='rgba(255,215,106,.85)';ctx.font='bold 10px "Exo 2",Arial';ctx.textAlign='center';
-    ctx.fillText(`${Math.ceil(b.hp)}`,b.x+22,b.y-11);
+    const cx=b.x+b.w/2,cy=b.y+b.h/2;
+    const hpPct=b.hp/b.maxHp;
+    // Shadow
+    ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(b.x+4,b.y+4,b.w,b.h);
+    // Main body — gradient from dark brown to lighter
+    const grd=ctx.createLinearGradient(b.x,b.y,b.x,b.y+b.h);
+    grd.addColorStop(0,'#8a5c2a');grd.addColorStop(1,'#5a3a18');
+    ctx.fillStyle=grd;ctx.fillRect(b.x,b.y,b.w,b.h);
+    // Wooden plank lines
+    ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(b.x,b.y+b.h/3);ctx.lineTo(b.x+b.w,b.y+b.h/3);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(b.x,b.y+b.h*2/3);ctx.lineTo(b.x+b.w,b.y+b.h*2/3);ctx.stroke();
+    // Vertical plank dividers
+    ctx.strokeStyle='rgba(0,0,0,.2)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(b.x+b.w/3,b.y);ctx.lineTo(b.x+b.w/3,b.y+b.h);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(b.x+b.w*2/3,b.y);ctx.lineTo(b.x+b.w*2/3,b.y+b.h);ctx.stroke();
+    // Highlight strip on top
+    ctx.fillStyle='rgba(255,200,120,.18)';ctx.fillRect(b.x,b.y,b.w,5);
+    // Glowing star icon — pulses when low HP
+    const pulse=hpPct<0.4?0.7+Math.sin(now*8)*0.3:0.9;
+    ctx.fillStyle=`rgba(255,215,80,${pulse})`;
+    ctx.shadowBlur=hpPct<0.4?12:0;ctx.shadowColor='#ffd76a';
+    ctx.font=`bold 20px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('★',cx,cy+1);
+    ctx.shadowBlur=0;
+    // Outer border
+    ctx.strokeStyle=`rgba(255,195,60,${0.3+hpPct*0.4})`;ctx.lineWidth=2;
+    ctx.strokeRect(b.x,b.y,b.w,b.h);
+    // HP bar
+    drawHpBar(cx,b.y-9,48,5,b.hp,b.maxHp,hpPct>0.5?'#ffd76a':'#ff8040');
+    ctx.fillStyle='rgba(255,215,106,.9)';ctx.font='bold 10px "Exo 2",Arial';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    ctx.fillText(Math.ceil(b.hp),cx,b.y-12);
   }
+  ctx.textBaseline='alphabetic';
 }
 function drawHazards(){
   const now=performance.now()/1000;
@@ -1951,15 +2024,45 @@ function drawMinimap(){
 }
 function drawGame(){
   ctx.clearRect(0,0,GC.width,GC.height);
-  const bg=ctx.createLinearGradient(0,0,0,GC.height);bg.addColorStop(0,'#101e3e');bg.addColorStop(1,'#060c1c');
-  ctx.fillStyle=bg;ctx.fillRect(0,0,GC.width,GC.height);
+  // World background — outer area (outside arena)
+  ctx.fillStyle='#060c18';ctx.fillRect(0,0,GC.width,GC.height);
+  // Arena floor — slightly lighter stone color
+  const arenaX=clamp(-game.cx,0,GC.width),arenaY=clamp(-game.cy,0,GC.height);
+  const arenaW=clamp(game.world.w-game.cx,0,GC.width)-arenaX;
+  const arenaH=clamp(game.world.h-game.cy,0,GC.height)-arenaY;
+  if(arenaW>0&&arenaH>0){
+    ctx.fillStyle='#0d1a2e';ctx.fillRect(arenaX,arenaY,arenaW,arenaH);
+    // Arena border glow
+    ctx.strokeStyle='rgba(60,100,220,.35)';ctx.lineWidth=3;
+    ctx.strokeRect(arenaX,arenaY,arenaW,arenaH);
+  }
   if(game.state==='menu'||game.state==='results')return;
   ctx.save();if(shDur>0)ctx.translate(shX,shY);
   drawGrid();
   ctx.save();ctx.translate(-game.cx,-game.cy);
   const now=performance.now()/1000;
   drawBushes();
-  for(const w of game.walls){ctx.fillStyle='#243050';ctx.fillRect(w.x,w.y,w.w,w.h);ctx.strokeStyle='rgba(80,130,255,.1)';ctx.lineWidth=1;ctx.strokeRect(w.x,w.y,w.w,w.h);ctx.fillStyle='rgba(255,255,255,.05)';ctx.fillRect(w.x,w.y,w.w,3);}
+  for(const w of game.walls){
+    // Shadow
+    ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(w.x+5,w.y+5,w.w,w.h);
+    // Base wall — blue-grey gradient
+    const wg=ctx.createLinearGradient(w.x,w.y,w.x,w.y+w.h);
+    wg.addColorStop(0,'#2e4470');wg.addColorStop(0.5,'#1e3058');wg.addColorStop(1,'#16243e');
+    ctx.fillStyle=wg;ctx.fillRect(w.x,w.y,w.w,w.h);
+    // Edge highlight — top
+    ctx.fillStyle='rgba(100,160,255,.22)';ctx.fillRect(w.x,w.y,w.w,4);
+    // Edge shadow — bottom
+    ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(w.x,w.y+w.h-4,w.w,4);
+    // Side edge — left
+    ctx.fillStyle='rgba(80,130,220,.12)';ctx.fillRect(w.x,w.y,4,w.h);
+    // Inner texture — subtle grid lines
+    ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+    const step=24;
+    for(let lx=w.x+step;lx<w.x+w.w;lx+=step){ctx.beginPath();ctx.moveTo(lx,w.y+4);ctx.lineTo(lx,w.y+w.h-4);ctx.stroke();}
+    for(let ly=w.y+step;ly<w.y+w.h;ly+=step){ctx.beginPath();ctx.moveTo(w.x+4,ly);ctx.lineTo(w.x+w.w-4,ly);ctx.stroke();}
+    // Outer border glow
+    ctx.strokeStyle='rgba(60,100,220,.28)';ctx.lineWidth=1.5;ctx.strokeRect(w.x+.5,w.y+.5,w.w-1,w.h-1);
+  }
   drawBoxes();drawHazards();drawPickups();drawBullets();drawFighters(now);drawGasOverlay();drawParticles();drawDmg();
   ctx.restore();ctx.restore();
 }
