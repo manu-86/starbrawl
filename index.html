@@ -909,7 +909,15 @@ function createWalls(){
 function circleRect(cx,cy,cr,r){const nx=clamp(cx,r.x,r.x+r.w),ny=clamp(cy,r.y,r.y+r.h),dx=cx-nx,dy=cy-ny;return dx*dx+dy*dy<cr*cr;}
 function lineRect(x1,y1,x2,y2,r){for(let i=0;i<=28;i++){const t=i/28,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h)return true;}return false;}
 const inBush=e=>game.bushes.some(b=>circleRect(e.x,e.y,e.r,b));
-function hiddenFrom(o,t){if(!inBush(t))return false;if(inBush(o))return false;if(dist(o.x,o.y,t.x,t.y)<90)return false;if(t.revealTimer>0)return false;return true;}
+// hiddenFrom: target is hidden if they're in a bush, observer is outside, and far enough
+// proximity 10px = only see them if you're basically inside the same bush tile
+function hiddenFrom(o,t){
+  if(!inBush(t))return false;        // target not in bush → visible
+  if(inBush(o))return false;         // observer also in bush → can see each other
+  if(dist(o.x,o.y,t.x,t.y)<55)return false;  // practically touching → can see
+  if(t.revealTimer>0)return false;   // target shot recently → revealed
+  return true;
+}
 const hasLOS=(ax,ay,bx,by)=>!game.walls.some(w=>lineRect(ax,ay,bx,by,w));
 function moveCircle(e,dx,dy){
   e.x+=dx;for(const w of game.walls)if(circleRect(e.x,e.y,e.r,w)){if(dx>0)e.x=w.x-e.r;if(dx<0)e.x=w.x+w.w+e.r;}
@@ -1578,23 +1586,28 @@ function updateAI(bot,dt,now){
       // Unstuck
       if(bot.stuckTime>1.0){const sd=Math.random()>.5?1:-1;mx=Math.cos(a+Math.PI/2*sd);my=Math.sin(a+Math.PI/2*sd);bot.stuckTime=0;}
     }else{
-      // Target not visible — try to navigate around wall
-      // If stuck, try perpendicular; if still stuck, retarget
-      if(bot.stuckTime>0.5){
-        // Try both perpendiculars, pick the one with fewer walls
-        const perpA=a+Math.PI/2,perpB=a-Math.PI/2;
-        const testDist=40;
-        const wallsA=game.walls.filter(w=>circleRect(bot.x+Math.cos(perpA)*testDist,bot.y+Math.sin(perpA)*testDist,bot.r,w)).length;
-        const wallsB=game.walls.filter(w=>circleRect(bot.x+Math.cos(perpB)*testDist,bot.y+Math.sin(perpB)*testDist,bot.r,w)).length;
-        const bestPerp=wallsA<=wallsB?perpA:perpB;
-        bot.wanderAngle=bestPerp+(Math.random()-.5)*.4;
-        bot.stuckTime=0;
+      // Target not visible — could be behind wall OR hidden in bush
+      const targetInBush=inBush(target)&&!inBush(bot);
+      if(targetInBush){
+        // Player is hidden in bush — bot has no idea where they are, wander
+        bot.targetId=null;
+        mx=Math.cos(bot.wanderAngle);my=Math.sin(bot.wanderAngle);
+      }else{
+        // Behind a wall — navigate around it
+        if(bot.stuckTime>0.5){
+          const perpA=a+Math.PI/2,perpB=a-Math.PI/2;
+          const testDist=40;
+          const wallsA=game.walls.filter(w=>circleRect(bot.x+Math.cos(perpA)*testDist,bot.y+Math.sin(perpA)*testDist,bot.r,w)).length;
+          const wallsB=game.walls.filter(w=>circleRect(bot.x+Math.cos(perpB)*testDist,bot.y+Math.sin(perpB)*testDist,bot.r,w)).length;
+          const bestPerp=wallsA<=wallsB?perpA:perpB;
+          bot.wanderAngle=bestPerp+(Math.random()-.5)*.4;
+          bot.stuckTime=0;
+        }
+        if(!bot.lastLosTime)bot.lastLosTime=now;
+        if(now-bot.lastLosTime>2.0){bot.targetId=null;bot.lastLosTime=null;}
+        mx=Math.cos(bot.stuckTime>0?bot.wanderAngle:a);
+        my=Math.sin(bot.stuckTime>0?bot.wanderAngle:a);
       }
-      // If we haven't had LOS in a while, give up and retarget
-      if(!bot.lastLosTime)bot.lastLosTime=now;
-      if(now-bot.lastLosTime>2.0){bot.targetId=null;bot.lastLosTime=null;}
-      mx=Math.cos(bot.stuckTime>0?bot.wanderAngle:a);
-      my=Math.sin(bot.stuckTime>0?bot.wanderAngle:a);
     }
   }else{
     if(bot.wanderTime<=0){
