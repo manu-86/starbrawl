@@ -1621,12 +1621,12 @@ function updateAI(bot,dt,now){
     mx=Math.cos(bot.wanderAngle);my=Math.sin(bot.wanderAngle);bot.facing=bot.wanderAngle;
   }
   const len=Math.hypot(mx,my)||1;
-  // ── BULLET DODGE (solo cuando el jugador tiene ≥4000 copas con el brawler) ──
+  // ── BULLET DODGE (solo a partir de 5500 copas con el brawler) ──
   let finalMx=mx/len,finalMy=my/len;
   const _bT=(save.brawlerTrophies||{})[save.selBrawler]||0;
-  if(_bT>=4000){
-    const dodgeThreshold=60+bot.reactionT*40;
-    const dodgeTime=1.2/Math.max(0.4,bot.reactionT);
+  if(_bT>=5500){
+    const dodgeThreshold=35;
+    const dodgeTime=0.45;
     let dodgeX=0,dodgeY=0;
     for(const b of game.bullets){
       if(b.ownerId===bot.id)continue;
@@ -1637,17 +1637,44 @@ function updateAI(bot,dt,now){
       const closestX=b.x+b.vx*proj,closestY=b.y+b.vy*proj;
       const d=dist(bot.x,bot.y,closestX,closestY);
       if(d>dodgeThreshold)continue;
-      const perpX=-(b.vy/bLen),perpY=b.vx/bLen;
-      const side=Math.sin(bot.id.charCodeAt(3)+now*0.1)>0?1:-1;
+      // Human error: ~25% chance to misjudge and dodge the wrong way
+      const missread=Math.sin(bot.id.charCodeAt(3)*7+now*3.7)>0.5?1:-1;
+      const error=Math.random()<0.25?-1:1;
+      const side=missread*error;
       const urgency=clamp(1-d/dodgeThreshold,0,1);
+      const perpX=-(b.vy/bLen),perpY=b.vx/bLen;
       dodgeX+=perpX*side*urgency;
       dodgeY+=perpY*side*urgency;
     }
     const dodgeLen=Math.hypot(dodgeX,dodgeY)||1;
     const dodgeStr=Math.min(1,Math.hypot(dodgeX,dodgeY));
-    finalMx=finalMx*(1-dodgeStr*0.8)+(dodgeX/dodgeLen)*dodgeStr*0.8;
-    finalMy=finalMy*(1-dodgeStr*0.8)+(dodgeY/dodgeLen)*dodgeStr*0.8;
+    // Personalities still affect dodge blend: aggressive bots dodge less (trust their aggression)
+    const dodgeBlend=aggrMul>1.1?0.5:0.75;
+    finalMx=finalMx*(1-dodgeStr*dodgeBlend)+(dodgeX/dodgeLen)*dodgeStr*dodgeBlend;
+    finalMy=finalMy*(1-dodgeStr*dodgeBlend)+(dodgeY/dodgeLen)*dodgeStr*dodgeBlend;
   }
+
+  // ── BORDER/CORNER ESCAPE ──
+  // If bot is near the map edge, push them back toward center
+  const edgeMargin=180;
+  const tooCenterX=game.world.w/2, tooCenterY=game.world.h/2;
+  let edgeX=0,edgeY=0;
+  if(bot.x<edgeMargin)edgeX=1;
+  else if(bot.x>game.world.w-edgeMargin)edgeX=-1;
+  if(bot.y<edgeMargin)edgeY=1;
+  else if(bot.y>game.world.h-edgeMargin)edgeY=-1;
+  if(edgeX!==0||edgeY!==0){
+    // Blend toward center — stronger the closer they are to the edge
+    const edgeStr=Math.max(
+      edgeX!==0?clamp(1-(bot.x<edgeMargin?bot.x:game.world.w-bot.x)/edgeMargin,0,1):0,
+      edgeY!==0?clamp(1-(bot.y<edgeMargin?bot.y:game.world.h-bot.y)/edgeMargin,0,1):0
+    );
+    finalMx=finalMx*(1-edgeStr*0.9)+edgeX*edgeStr*0.9;
+    finalMy=finalMy*(1-edgeStr*0.9)+edgeY*edgeStr*0.9;
+    // Also reset stuck timer so regen can kick in
+    if(edgeStr>0.5)bot.stuckTime=0;
+  }
+
   const finalLen=Math.hypot(finalMx,finalMy)||1;
   moveCircle(bot,(finalMx/finalLen)*bot.speed*dt,(finalMy/finalLen)*bot.speed*dt);applyRegen(bot,dt,now);
 }
